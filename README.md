@@ -117,9 +117,11 @@ SMOKE_DIR=/tmp ./smoke
 [SPEC.md](SPEC.md) lists every behavior ezsys guarantees, each either proved
 by a quantified law in `LAWS.bend` or named as a trusted assumption. A row
 marked pending is not guaranteed yet. `nix flake check` runs the proof gate
-(`bend PROOF.bend` must print exactly `ALL PROOFS CHECK` first), the entry
-check, the smoke program above on the C lane, and bolt, whose `trace` rule
-checks that SPEC.md and the laws agree.
+(`bend PROOF.bend` must print exactly `ALL PROOFS CHECK` first), the smoke
+program above on the C lane, and bolt, whose `trace` rule checks that SPEC.md
+and the laws agree and whose `coverage` rule, an error, checks that a law
+reaches every def; an example's defs are exempt by a `# noqa: L001` naming
+why.
 
 What is proved: the shape of every `time.iso` (24 characters, digits where
 digits belong) and how it splits into the day's date and the time of day;
