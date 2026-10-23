@@ -29,6 +29,7 @@
       bend = inputs.bend.packages.${system}.default;
       bolt = ez.toolPackage { name = "bolt"; src = self; wrapFlags = [ "--gpu" "off" ]; };
       bend-cc = ez.bend-cc;
+      llvm = pkgs.llvmPackages_19;
     in {
       packages.${system} = {
         inherit bend bend-cc;
@@ -50,6 +51,58 @@
             echo "$p: $first"
             [ "$first" = "ALL PROOFS CHECK" ] || exit 1
           done
+          touch $out
+        '';
+        # ENTRY.bend states the laws on main.bend, which reaches src/sys.bend's
+        # foreign effects, so its verdict is SOME PROOFS FAIL; its only error
+        # may be the list of defs relying on unsafe or foreign code (2.0.38
+        # prints it as `defs that depend on ...:` lines and a Hint).
+        entry = pkgs.runCommand "ezsys-entry" {
+          nativeBuildInputs = [ bend ];
+          BEND_LIB = ez.bendLib ./ez.lock.toml;
+        } ''
+          export HOME=$TMPDIR
+          cp -r ${self} src && chmod -R u+w src && cd src
+          out_entry=$(bend ENTRY.bend 2>&1 || true)
+          echo "$out_entry" | head -n 2
+          [ "$(echo "$out_entry" | sed -n 1p)" = "SOME PROOFS FAIL" ] || exit 1
+          echo "$out_entry" | sed -n 2p \
+            | grep -Eq '^Error: [0-9]+ defs? rel(y|ies) on unsafe or foreign code:$' || exit 1
+          if echo "$out_entry" | tail -n +3 \
+            | grep -Ev '^defs that depend on (@unsafe|foreign effects): |^Hint: ' \
+            | grep -q .; then
+            echo "$out_entry"; exit 1
+          fi
+          touch $out
+        '';
+        # examples/smoke on the C lane: build it, save a file atomically, read
+        # it back, read a missing file, and print the wall clock, which must
+        # be within a few seconds of `date -u`. A smoke run, not evidence for
+        # any SPEC.md row.
+        smoke = pkgs.runCommand "ezsys-smoke" {
+          nativeBuildInputs = [ bend llvm.clang ];
+          BEND_LIB = ez.bendLib ./ez.lock.toml;
+          BEND_NO_TELEMETRY = "1";
+        } ''
+          export HOME=$TMPDIR CC=${llvm.clang}/bin/clang
+          cp -r ${self} src && chmod -R u+w src && cd src/examples/smoke
+          bend main.bend -o smoke
+          mkdir -p $TMPDIR/smoke
+          before=$(date -u +%s)
+          got=$(SMOKE_DIR=$TMPDIR/smoke ./smoke)
+          after=$(date -u +%s)
+          echo "$got"
+          echo "$got" | grep -qx 'saved' || exit 1
+          echo "$got" | grep -qx 'read back: héllo, ezsys' || exit 1
+          echo "$got" | grep -qx 'FAIL 2 No such file or directory' || exit 1
+          [ ! -e $TMPDIR/smoke/ezsys-smoke.txt.tmp ] || exit 1
+          echo "$got" | grep -qx 'env: fallback' || exit 1
+          now=$(echo "$got" | sed -n 's/^now: //p')
+          echo "$now" | grep -Eqx '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z' || exit 1
+          at=$(date -u -d "$(echo "$now" | sed 's/T/ /; s/Z$//')" +%s)
+          [ "$at" -ge "$((before - 2))" ] && [ "$at" -le "$((after + 2))" ] || exit 1
+          echo "$got" | grep -qF "Hello Noah, it is $now {{unknown}}" || exit 1
+          echo "$got" | grep -qx '  <li>pylon</li>' || exit 1
           touch $out
         '';
         lint = ez.mkLint { src = self; };
