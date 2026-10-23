@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   publish:
-    uses: Emerging-Patterns/actions/.github/workflows/publish.yml@c600847532d562579fb7689e4dfbc22ee2b01a13
+    uses: Emerging-Patterns/actions/.github/workflows/publish.yml@73b2fbc64cefd6e22bd786437adb5f35190ee837
     with:
       tag: ${{ inputs.tag }}
       hub-name: emerging-ezsys

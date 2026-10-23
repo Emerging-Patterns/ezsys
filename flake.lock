@@ -21,41 +21,21 @@
         "type": "github"
       }
     },
-    "bend_2": {
-      "inputs": {
-        "nixpkgs": [
-          "ez",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1791348820,
-        "narHash": "sha256-2YQX/3rN/NVkKcxjVMPLs4D5ItBwsVTEJxxKV6mIGSE=",
-        "owner": "bendlang",
-        "repo": "bend",
-        "rev": "eebc18cd04daeade06c3f68c3c96c1faefd3462f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "bendlang",
-        "repo": "bend",
-        "rev": "eebc18cd04daeade06c3f68c3c96c1faefd3462f",
-        "type": "github"
-      }
-    },
     "ez": {
       "inputs": {
-        "bend": "bend_2",
+        "bend": [
+          "bend"
+        ],
         "nixpkgs": [
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1792726537,
-        "narHash": "sha256-YGu7gV4NKyv2bPo33h8v256l5nm9eQQOcML6/dPpEgE=",
+        "lastModified": 1792731402,
+        "narHash": "sha256-GpW1i+WfzZH4KdLNmzstlb3ob7i8KOKcssG7I9Z2C7U=",
         "owner": "Emerging-Patterns",
         "repo": "ez",
-        "rev": "b60383832b7773dfa5f5f6ab93cf5416cfad207d",
+        "rev": "0631d3885fbb9be07650561c1da574cbce1f15da",
         "type": "github"
       },
       "original": {
