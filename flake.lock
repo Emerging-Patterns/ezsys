@@ -1,0 +1,93 @@
+{
+  "nodes": {
+    "bend": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792534666,
+        "narHash": "sha256-fzvSP+xnX/4FFv5VrYJPmyJEbAfNIi1TQHoAZ28rwwo=",
+        "owner": "bendlang",
+        "repo": "bend",
+        "rev": "042e797ebd1cfc060603e2682879909fe86fa8c2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "bendlang",
+        "repo": "bend",
+        "rev": "042e797ebd1cfc060603e2682879909fe86fa8c2",
+        "type": "github"
+      }
+    },
+    "bend_2": {
+      "inputs": {
+        "nixpkgs": [
+          "ez",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791348820,
+        "narHash": "sha256-2YQX/3rN/NVkKcxjVMPLs4D5ItBwsVTEJxxKV6mIGSE=",
+        "owner": "bendlang",
+        "repo": "bend",
+        "rev": "eebc18cd04daeade06c3f68c3c96c1faefd3462f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "bendlang",
+        "repo": "bend",
+        "rev": "eebc18cd04daeade06c3f68c3c96c1faefd3462f",
+        "type": "github"
+      }
+    },
+    "ez": {
+      "inputs": {
+        "bend": "bend_2",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792726537,
+        "narHash": "sha256-YGu7gV4NKyv2bPo33h8v256l5nm9eQQOcML6/dPpEgE=",
+        "owner": "Emerging-Patterns",
+        "repo": "ez",
+        "rev": "b60383832b7773dfa5f5f6ab93cf5416cfad207d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Emerging-Patterns",
+        "repo": "ez",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1792502884,
+        "narHash": "sha256-IoNisKcGbUjdd45qCqywGMCYmZ5EnkxezvLII0FWwNA=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "02c087f3fe673c9e317f206a627cb6b910336dbe",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "bend": "bend",
+        "ez": "ez",
+        "nixpkgs": "nixpkgs"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

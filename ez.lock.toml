@@ -1,0 +1,10 @@
+[lock]
+version = "2"
+hub = "https://hub.bend-lang.com"
+[tools]
+[tools.bolt]
+git = "https://github.com/Emerging-Patterns/bolt"
+rev = "efb82d24598bd3e9e64004bc443093d4dd072173"
+root = "."
+narHash = "sha256-hw4rVnEWEi9Q/Cen7ZGqdz+lYm1vup3+52rBwCEBskY="
+entry = "main.bend"
