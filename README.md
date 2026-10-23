@@ -38,6 +38,14 @@ ez add Emerging-Patterns/ezsys
 | `time.now_iso()` | `IO(String)` | `time.iso` of `time.now()` |
 | `text.fill(template, pairs)` | `String` | every `{{key}}` replaced by its value |
 | `text.fill_with(open, close, template, pairs)` | `String` | the same with other delimiters |
+| `text.strip(txt)`, `text.lstrip(txt)`, `text.rstrip(txt)` | `String` | Python's `str.strip()` and its two halves, with Python's whitespace (no-break space included) |
+| `text.replace(txt, old, new)` | `String` | every `old` replaced, left to right, as `str.replace` |
+| `text.split(txt, sep)` | `List<&2, String>` | the pieces between every `sep`, as `str.split(sep)` |
+| `text.find(txt, needle)` | `Maybe<&2, U32>` | where `needle` first starts, in code points, as `str.find` (`None` for `-1`) |
+| `text.lower(txt)`, `text.upper(txt)` | `String` | `str.lower()` and `str.upper()` for ASCII, Latin-1, Latin Extended-A, Greek and Cyrillic |
+| `text.pad_right(txt, width)` | `String` | `str.ljust(width)` |
+| `text.truncate(txt, width)` | `String` | `txt[:width]` |
+| `digits.cmp(lhs, rhs)` | `Cmp` | two strings of digits in numeric order, any length |
 | `dir.list(path)` | `IO(Result<&1, &1, U32 & String, List<&2, String>>)` | the directory's names, sorted, without `.` and `..` |
 | `err.os(code, why, path)` | `String` | `[Errno 2] No such file or directory: '/tmp/x'` |
 

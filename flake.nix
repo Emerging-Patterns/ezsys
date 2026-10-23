@@ -105,6 +105,7 @@
           [ "$at" -ge "$((before - 2))" ] && [ "$at" -le "$((after + 2))" ] || exit 1
           echo "$got" | grep -qF "Hello Noah, it is $now {{unknown}}" || exit 1
           echo "$got" | grep -qx '  <li>pylon</li>' || exit 1
+          echo "$got" | grep -qx 'text: STRASSE|a,b,c|ΑΒ  |' || exit 1
           # dir.list: names sorted by code point, no . or .., then a missing
           # directory written as Python's OSError
           echo "$got" | sed -n '/^list:$/,$p' | sed -n '2,5p' > listed

@@ -5,6 +5,7 @@ import ./src/clock.bend as Clock
 import ./src/text.bend as Text
 import ./src/dir.bend as Dir
 import ./src/errno.bend as Err
+import ./src/str.bend as Str
 import ./LAWS.bend as Laws
 
 # --- Bool facts ---
@@ -1667,3 +1668,478 @@ def asc_sort(xs):
 
 def Laws.dir_sorted(raw):
   asc_sort(Dir.dir.keep(raw))
+
+# --- whitespace ---
+
+# a false is not true
+def no(-G: Type, e: {False{} == True{} : Bool}) -> G:
+  gone(&1, G, clash(Equal.sym(Bool, False{}, True{}, e)))
+
+def Laws.space_set(_x):
+  {==}
+
+def Laws.lstrip_space(h, t, e):
+  %Equal.sym(Bool, Str.text.space(h), True{}, e)
+    : {Str.text.lstrip.if(_, h, t, _u => Str.text.lstrip(t))
+      == Str.text.lstrip(t) : String}
+  {==}
+
+def Laws.lstrip_keep(h, t, e):
+  %Equal.sym(Bool, Str.text.space(h), False{}, e)
+    : {Str.text.lstrip.if(_, h, t, _u => Str.text.lstrip(t)) == SCon{h, t}
+      : String}
+  {==}
+
+def Laws.lstrip_empty(s, e):
+  match s:
+    case SNil{}:
+      {==}
+    case SCon{h, t}:
+      no({Str.text.lstrip(SCon{h, t}) == SCon{h, t} : String}, e)
+
+def Laws.rstrip_space(t, h, e):
+  match t:
+    case SNil{}:
+      %Equal.sym(Bool, Str.text.space(h), True{}, e)
+        : {Str.text.rstrip.lone(_, h) == SNil{} : String}
+      {==}
+    case SCon{+x, +r}:
+      Equal.cong(String, String, y => Str.text.rstrip.put(x, y),
+        Str.text.rstrip(r ++ SCon{h, SNil{}}), Str.text.rstrip(r),
+        Laws.rstrip_space(r, h, e))
+
+# a character before a nonempty rest is kept
+law rstrip_put_con:
+  for +x: Char
+  for +r: String
+  for +h: Char
+  {Str.text.rstrip.put(x, r ++ SCon{h, SNil{}}) == SCon{x, r ++ SCon{h, SNil{}}}
+    : String}
+
+def rstrip_put_con(_x, r, _h):
+  match r:
+    case SNil{}:
+      {==}
+    case SCon{_a, _b}:
+      {==}
+
+def Laws.rstrip_keep(t, h, e):
+  match t:
+    case SNil{}:
+      %Equal.sym(Bool, Str.text.space(h), False{}, e)
+        : {Str.text.rstrip.lone(_, h) == SCon{h, SNil{}} : String}
+      {==}
+    case SCon{+x, +r}:
+      Equal.trans(String,
+        Str.text.rstrip.put(x, Str.text.rstrip(r ++ SCon{h, SNil{}})),
+        Str.text.rstrip.put(x, r ++ SCon{h, SNil{}}),
+        SCon{x, r ++ SCon{h, SNil{}}},
+        Equal.cong(String, String, y => Str.text.rstrip.put(x, y),
+          Str.text.rstrip(r ++ SCon{h, SNil{}}), r ++ SCon{h, SNil{}},
+          Laws.rstrip_keep(r, h, e)),
+        rstrip_put_con(x, r, h))
+
+def Laws.rstrip_empty(s, e):
+  match s:
+    case SNil{}:
+      {==}
+    case SCon{h, t}:
+      no({Str.text.rstrip(SCon{h, t}) == SCon{h, t} : String}, e)
+
+def Laws.strip_both(_s):
+  {==}
+
+# --- replace, split and find ---
+
+# the rest of a found `old` is passed over
+law replace_skip:
+  for +ot: String
+  for +x: String
+  for +old: String
+  for +new: String
+  {Str.text.replace.go(ot ++ x, String.length(ot), old, new)
+    == Str.text.replace.go(x, 0n, old, new) : String}
+
+def replace_skip(ot, x, old, new):
+  match ot:
+    case SNil{}:
+      {==}
+    case SCon{_c, +t}:
+      replace_skip(t, x, old, new)
+
+def Laws.replace_hit(oh, ot, rest, new):
+  %Equal.sym(Bool, String.starts_with(SCon{oh, ot} ++ rest, SCon{oh, ot}),
+    True{}, starts_self(SCon{oh, ot}, rest))
+    : {Str.text.replace.at(_, oh, new, String.length(ot),
+      k => Str.text.replace.go(ot ++ rest, k, SCon{oh, ot}, new))
+      == new ++ Str.text.replace.go(rest, 0n, SCon{oh, ot}, new) : String}
+  Equal.cong(String, String, y => new ++ y,
+    Str.text.replace.go(ot ++ rest, String.length(ot), SCon{oh, ot}, new),
+    Str.text.replace.go(rest, 0n, SCon{oh, ot}, new),
+    replace_skip(ot, rest, SCon{oh, ot}, new))
+
+def Laws.replace_miss(h, t, oh, ot, new, e):
+  %Equal.sym(Bool, String.starts_with(SCon{h, t}, SCon{oh, ot}), False{}, e)
+    : {Str.text.replace.at(_, h, new, String.length(ot),
+      k => Str.text.replace.go(t, k, SCon{oh, ot}, new))
+      == SCon{h, Str.text.replace.go(t, 0n, SCon{oh, ot}, new)} : String}
+  {==}
+
+def Laws.replace_end(_oh, _ot, _new):
+  {==}
+
+def Laws.replace_gaps(_h, _t, _new):
+  {==}
+
+def Laws.replace_gaps_end(new):
+  app_nil(new)
+
+def Laws.split_end(_sh, _st):
+  {==}
+
+# the rest of a found separator is passed over
+law split_skip:
+  for +st: String
+  for +x: String
+  for +sep: String
+  {Str.text.split.go(st ++ x, String.length(st), sep)
+    == Str.text.split.go(x, 0n, sep) : List<&2, String>}
+
+def split_skip(st, x, sep):
+  match st:
+    case SNil{}:
+      {==}
+    case SCon{_c, +t}:
+      split_skip(t, x, sep)
+
+def Laws.split_hit(sh, st, rest):
+  %Equal.sym(Bool, String.starts_with(SCon{sh, st} ++ rest, SCon{sh, st}),
+    True{}, starts_self(SCon{sh, st}, rest))
+    : {Str.text.split.at(_, sh, String.length(st),
+      k => Str.text.split.go(st ++ rest, k, SCon{sh, st}))
+      == SNil{} <> Str.text.split.go(rest, 0n, SCon{sh, st})
+      : List<&2, String>}
+  Equal.cong(List<&2, String>, List<&2, String>, y => SNil{} <> y,
+    Str.text.split.go(st ++ rest, String.length(st), SCon{sh, st}),
+    Str.text.split.go(rest, 0n, SCon{sh, st}),
+    split_skip(st, rest, SCon{sh, st}))
+
+def Laws.split_miss(h, t, sh, st, e):
+  %Equal.sym(Bool, String.starts_with(SCon{h, t}, SCon{sh, st}), False{}, e)
+    : {Str.text.split.at(_, h, String.length(st),
+      k => Str.text.split.go(t, k, SCon{sh, st}))
+      == Str.text.split.push(h, Str.text.split.go(t, 0n, SCon{sh, st}))
+      : List<&2, String>}
+  {==}
+
+def Laws.split_push(_h, _p, _ps):
+  {==}
+
+# pushing a character never answers no pieces
+law push_some:
+  for h: Char
+  for ps: List<&2, String>
+  {List.is_empty(&2, String, Str.text.split.push(h, ps)) == False{} : Bool}
+
+def push_some(_h, ps):
+  match ps:
+    case Nil{}:
+      {==}
+    case _p <> _r:
+      {==}
+
+# a step of the scan never answers no pieces
+law split_at_some:
+  for b: Bool
+  for h: Char
+  for left: Nat
+  for next: Nat -> List<&2, String>
+  {List.is_empty(&2, String, Str.text.split.at(b, h, left, next)) == False{}
+    : Bool}
+
+def split_at_some(b, h, _left, next):
+  match b:
+    case True{}:
+      {==}
+    case False{}:
+      push_some(h, next(0n))
+
+# the scan never answers no pieces
+law split_go_some:
+  for +s: String
+  for +skip: Nat
+  for +sep: String
+  {List.is_empty(&2, String, Str.text.split.go(s, skip, sep)) == False{}
+    : Bool}
+
+def split_go_some(s, skip, sep):
+  match s:
+    case SNil{}:
+      {==}
+    case SCon{+h, +t}:
+      match skip:
+        case 0n:
+          split_at_some(String.starts_with(SCon{h, t}, sep), h,
+            Str.text.after(sep), k => Str.text.split.go(t, k, sep))
+        case 1n+k:
+          split_go_some(t, k, sep)
+
+def Laws.split_some(s, sh, st):
+  split_go_some(s, 0n, SCon{sh, st})
+
+def Laws.split_whole(_s):
+  {==}
+
+def Laws.find_empty(s):
+  match s:
+    case SNil{}:
+      {==}
+    case SCon{_h, _t}:
+      {==}
+
+def Laws.find_hit(h, t, needle, e):
+  %Equal.sym(Bool, String.starts_with(SCon{h, t}, needle), True{}, e)
+    : {Str.text.find.at(_, _u => Str.text.find(t, needle)) == Some{0}
+      : Maybe<&2, U32>}
+  {==}
+
+def Laws.find_next(h, t, needle, i, e, got):
+  %Equal.sym(Bool, String.starts_with(SCon{h, t}, needle), False{}, e)
+    : {Str.text.find.at(_, _u => Str.text.find(t, needle))
+      == Some{(i + 1 : U32)} : Maybe<&2, U32>}
+  %Equal.sym(Maybe<&2, U32>, Str.text.find(t, needle), Some{i}, got)
+    : {Str.text.find.inc(_) == Some{(i + 1 : U32)} : Maybe<&2, U32>}
+  {==}
+
+def Laws.find_none(h, t, needle, e, got):
+  %Equal.sym(Bool, String.starts_with(SCon{h, t}, needle), False{}, e)
+    : {Str.text.find.at(_, _u => Str.text.find(t, needle)) == None{}
+      : Maybe<&2, U32>}
+  %Equal.sym(Maybe<&2, U32>, Str.text.find(t, needle), None{}, got)
+    : {Str.text.find.inc(_) == None{} : Maybe<&2, U32>}
+  {==}
+
+def Laws.find_end(_nh, _nt):
+  {==}
+
+# a place one further on is a place exactly when the first is
+law inc_some:
+  for m: Maybe<&2, U32>
+  {Maybe.is_some(&2, U32, Str.text.find.inc(m)) == Maybe.is_some(&2, U32, m)
+    : Bool}
+
+def inc_some(m):
+  match m:
+    case None{}:
+      {==}
+    case Some{_i}:
+      {==}
+
+# one step of find answers a place exactly when one step of contains holds
+law find_at_some:
+  for b: Bool
+  for +t: String
+  for +needle: String
+  for ih: {Maybe.is_some(&2, U32, Str.text.find(t, needle))
+    == String.contains(t, needle) : Bool}
+  {Maybe.is_some(&2, U32, Str.text.find.at(b, _u => Str.text.find(t, needle)))
+    == String.contains.if(t, needle, b) : Bool}
+
+def find_at_some(b, t, needle, ih):
+  match b:
+    case True{}:
+      {==}
+    case False{}:
+      Equal.trans(Bool,
+        Maybe.is_some(&2, U32, Str.text.find.inc(Str.text.find(t, needle))),
+        Maybe.is_some(&2, U32, Str.text.find(t, needle)),
+        String.contains(t, needle),
+        inc_some(Str.text.find(t, needle)), ih)
+
+def Laws.find_contains(s, needle):
+  match s:
+    case SNil{}:
+      match needle:
+        case SNil{}:
+          {==}
+        case SCon{_h, _t}:
+          {==}
+    case SCon{+h, +t}:
+      find_at_some(String.starts_with(SCon{h, t}, needle), t, needle,
+        Laws.find_contains(t, needle))
+
+# --- case ---
+
+def Laws.lower_con(_h, _t):
+  {==}
+
+def Laws.lower_nil(s, e):
+  match s:
+    case SNil{}:
+      {==}
+    case SCon{h, t}:
+      no({Str.text.lower(SCon{h, t}) == SCon{h, t} : String}, e)
+
+def Laws.upper_con(_h, _t):
+  {==}
+
+def Laws.upper_nil(s, e):
+  match s:
+    case SNil{}:
+      {==}
+    case SCon{h, t}:
+      no({Str.text.upper(SCon{h, t}) == SCon{h, t} : String}, e)
+
+def Laws.lower_table(_x):
+  {==}
+
+def Laws.upper_table(_x):
+  {==}
+
+def Laws.case_multi(ms, rules, x, s, e):
+  %Equal.sym(Maybe<&2, String>, Str.text.case.multi(ms, x), Some{s}, e)
+    : {Str.text.case.one(_, x, rules) == s : String}
+  {==}
+
+def Laws.case_rules(ms, rules, x, e):
+  %Equal.sym(Maybe<&2, String>, Str.text.case.multi(ms, x), None{}, e)
+    : {Str.text.case.one(_, x, rules)
+      == SCon{Chr{Str.text.case.apply(rules, x)}, SNil{}} : String}
+  {==}
+
+def Laws.multi_none(_x):
+  {==}
+
+def Laws.multi_hit(from, to, rest, x, e):
+  %Equal.sym(Bool, U32.is_eq(from, x), True{}, e)
+    : {Str.text.case.found(_, to, _u => Str.text.case.multi(rest, x))
+      == Some{to} : Maybe<&2, String>}
+  {==}
+
+def Laws.multi_miss(from, to, rest, x, e):
+  %Equal.sym(Bool, U32.is_eq(from, x), False{}, e)
+    : {Str.text.case.found(_, to, _u => Str.text.case.multi(rest, x))
+      == Str.text.case.multi(rest, x) : Maybe<&2, String>}
+  {==}
+
+def Laws.apply_none(_x):
+  {==}
+
+def Laws.apply_hit(r, rest, x, e):
+  %Equal.sym(Bool, Str.text.case.covers(r, x), True{}, e)
+    : {Str.text.case.pick(_, r, x, _u => Str.text.case.apply(rest, x))
+      == Str.text.case.target(r, x) : U32}
+  {==}
+
+def Laws.apply_miss(r, rest, x, e):
+  %Equal.sym(Bool, Str.text.case.covers(r, x), False{}, e)
+    : {Str.text.case.pick(_, r, x, _u => Str.text.case.apply(rest, x))
+      == Str.text.case.apply(rest, x) : U32}
+  {==}
+
+def Laws.covers_def(_lo, _hi, _step, _to, _x):
+  {==}
+
+def Laws.target_def(_lo, _hi, _step, _to, _x):
+  {==}
+
+# --- width ---
+
+def Laws.pad_form(s, n):
+  match s:
+    case SNil{}:
+      match n:
+        case 0n:
+          {==}
+        case 1n+_k:
+          {==}
+    case SCon{+h, +t}:
+      match n:
+        case 0n:
+          Equal.sym(String, SCon{h, t} ++ "", SCon{h, t}, app_nil(SCon{h, t}))
+        case 1n+k:
+          Equal.cong(String, String, y => SCon{h, y}, Str.text.pad_right(t, k),
+            t ++ String.repeat(" ", Nat.sub(k, String.length(t))),
+            Laws.pad_form(t, k))
+
+# n spaces are n code points
+law repeat_len:
+  for n: Nat
+  {String.length(String.repeat(" ", n)) == n : Nat}
+
+def repeat_len(n):
+  match n:
+    case 0n:
+      {==}
+    case 1n+k:
+      Equal.cong(Nat, Nat, m => 1n+m, String.length(String.repeat(" ", k)), k,
+        repeat_len(k))
+
+def Laws.pad_length(s, n):
+  match s:
+    case SNil{}:
+      repeat_len(n)
+    case SCon{+h, +t}:
+      match n:
+        case 0n:
+          {==}
+        case 1n+k:
+          Equal.cong(Nat, Nat, m => 1n+m,
+            String.length(Str.text.pad_right(t, k)),
+            Nat.max(String.length(t), k), Laws.pad_length(t, k))
+
+def Laws.trunc_split(s, n):
+  match s:
+    case SNil{}:
+      {==}
+    case SCon{+h, +t}:
+      match n:
+        case 0n:
+          {==}
+        case 1n+k:
+          Equal.cong(String, String, y => SCon{h, y},
+            Str.text.truncate(t, k) ++ String.drop(t, k), t,
+            Laws.trunc_split(t, k))
+
+def Laws.trunc_length(s, n):
+  match s:
+    case SNil{}:
+      {==}
+    case SCon{+h, +t}:
+      match n:
+        case 0n:
+          {==}
+        case 1n+k:
+          Equal.cong(Nat, Nat, m => 1n+m,
+            String.length(Str.text.truncate(t, k)),
+            Nat.min(String.length(t), k), Laws.trunc_length(t, k))
+
+# --- digit strings ---
+
+def Laws.dig_rule(_a, _b):
+  {==}
+
+def Laws.dig_shorter(_a, _b):
+  {==}
+
+def Laws.dig_longer(_a, _b):
+  {==}
+
+def Laws.dig_same(_a, _b):
+  {==}
+
+def Laws.trim_zero(_t):
+  {==}
+
+def Laws.trim_keep(h, t, e):
+  %Equal.sym(Bool, Char.is_eq(h, '0'), False{}, e)
+    : {Str.text.digits.zero.if(_, h, t, _u => Str.text.digits.trim(t))
+      == SCon{h, t} : String}
+  {==}
+
+def Laws.trim_empty(s, e):
+  match s:
+    case SNil{}:
+      {==}
+    case SCon{h, t}:
+      no({Str.text.digits.trim(SCon{h, t}) == SCon{h, t} : String}, e)
