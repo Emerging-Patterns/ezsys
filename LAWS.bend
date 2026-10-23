@@ -288,22 +288,32 @@ law weekday_epoch:
   for e: {(secs / 86400 : U32) == 0 : U32}
   {Clock.time.weekday((secs / 86400 : U32)) == 4 : U32}
 
-# LAW: each day's weekday is the one after the day before's
+# LAW: each day's day of the week is the one after the day before's
 # SYS-TIME-6
 law weekday_step:
   for num: Nat
-  {Clock.time.weekday.nat(1n+num)
-    == Clock.time.wd.next(Clock.time.weekday.nat(num)) : U32}
+  {Clock.time.wd.go(1n+num, Clock.Thu{})
+    == Clock.time.wd.next(Clock.time.wd.go(num, Clock.Thu{})) : Clock.Wd}
 
-# LAW: the weekday after 7 (Sunday) is 1 (Monday); after any other, the
-# next number
+# LAW: the weekday number after 7 (Sunday) is 1 (Monday); after any other,
+# the next number
 # SYS-TIME-6
 law weekday_next:
-  for +wd: U32
-  {Clock.time.wd.next(wd) == Bool.pick(U32, U32.is_eq(wd, 7), 1, (wd + 1 : U32))
-    : U32}
+  for day: Clock.Wd
+  {Clock.time.wd.num(Clock.time.wd.next(day))
+    == Bool.pick(U32, U32.is_eq(Clock.time.wd.num(day), 7), 1,
+      (Clock.time.wd.num(day) + 1 : U32)) : U32}
 
-# LAW: a day number's weekday is that of the day that many days on
+# LAW: the weekday of day n is the number of the day of the week n days
+# after 1970-01-01, a Thursday
+# SYS-TIME-6
+law weekday_nat:
+  for num: Nat
+  {Clock.time.weekday.nat(num)
+    == Clock.time.wd.num(Clock.time.wd.go(num, Clock.Thu{})) : U32}
+
+# LAW: a day number's weekday, computed a bit at a time, is that of the day
+# that many days after 1970-01-01, counted a day at a time
 # SYS-TIME-6
 law weekday_days:
   for days: U32
