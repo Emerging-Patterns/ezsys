@@ -1,6 +1,5 @@
-# bolt.bend: how bolt lints this repo. Every rule is an error except
-# `coverage`: the gate must see no errors. See bolt/config.bend for the groups
-# and levels.
+# bolt.bend: how bolt lints this repo. Every rule is an error: the gate must
+# see no errors. See bolt/config.bend for the groups and levels.
 import Base
 
 # what will fail or blow up
@@ -19,11 +18,11 @@ def style() -> String:
 def laws() -> String:
   "error"
 
-# a def no quantified law reaches: warn, as in ezhttp, because bolt does not
-# count ENTRY.bend's fills (they fill laws stated in the same file) and the
-# example program under examples/ is no law's subject
+# a def no quantified law reaches. The example program under examples/ is no
+# law's subject, so each of its defs carries `# noqa: L001` with the reason.
+# main.bend's names are dotted, which bolt reads as helpers and never grades
 def coverage() -> String:
-  "warn"
+  "error"
 
 # a law with no binder
 def closed() -> String:
