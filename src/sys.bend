@@ -1,11 +1,13 @@
-# ezsys/src/sys: the effects. Every decision these make is src/step.bend's or
-# src/clock.bend's; this module runs the effects in order and acts on the
-# answers (SYS-TRUST-4). The two effects of its own are foreign code, a C
-# file and its JS twin each: a flush-and-rename (SYS-TRUST-1) and the wall
-# clock (SYS-TRUST-2).
+# ezsys/src/sys: the effects. Every decision these make is src/step.bend's,
+# src/clock.bend's or src/dir.bend's; this module runs the effects in order
+# and acts on the answers (SYS-TRUST-4). The three effects of its own are
+# foreign code, a C file and its JS twin each: a flush-and-rename
+# (SYS-TRUST-1), the wall clock (SYS-TRUST-2) and a directory's names
+# (SYS-TRUST-5).
 import Base
 import ./step.bend as Step
 import ./clock.bend as Clock
+import ./dir.bend as Dir
 
 # flush `from` to disk, then rename it over `to`
 def ezsys.rename(
@@ -19,6 +21,13 @@ def ezsys.rename(
 def ezsys.clock() -> IO(U32 & U32):
   import "./effs/clock.c"
   import "./effs/clock.js"
+
+# the names in a directory as the host lists them, in its order
+def ezsys.list(
+  path: String
+) -> IO(Result<&1, &1, U32 & String, List<&2, String>>):
+  import "./effs/dir.c"
+  import "./effs/dir.js"
 
 # reads one file.read makes at most
 def sys.read.fuel() -> Nat:
@@ -156,3 +165,12 @@ def sys.env(name: String, fallback: String) -> IO(String):
 def sys.now_iso() -> IO(String):
   IO.bind(U32 & U32, String, ezsys.clock(),
     now => IO.pure(String, Clock.time.iso.of(now)))
+
+# a directory's names, less "." and "..", sorted; a failed read is the answer
+def sys.list(
+  path: String
+) -> IO(Result<&1, &1, U32 & String, List<&2, String>>):
+  IO.bind(Result<&1, &1, U32 & String, List<&2, String>>,
+    Result<&1, &1, U32 & String, List<&2, String>>, ezsys.list(path),
+    res => IO.pure(Result<&1, &1, U32 & String, List<&2, String>>,
+      Dir.dir.step(res)))

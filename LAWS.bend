@@ -6,6 +6,8 @@ import Base
 import ./src/step.bend as Step
 import ./src/clock.bend as Clock
 import ./src/text.bend as Text
+import ./src/dir.bend as Dir
+import ./src/errno.bend as Err
 
 # --- the specification's own words ---
 
@@ -396,3 +398,286 @@ law fill_braces:
   for pairs: Text.text.Pairs()
   {Text.text.fill(t, pairs) == Text.text.fill_with("{{", "}}", t, pairs)
     : String}
+
+# --- directories (SYS-DIR) ---
+
+# one copy of the name, when hit holds
+def listed.pick(hit: Bool, count: Nat) -> Nat:
+  match hit:
+    case True{}:
+      1n+count
+    case False{}:
+      count
+
+# how many times a list holds a name
+def listed(+name: String, xs: List<&2, String>) -> Nat:
+  match xs:
+    case Nil{}:
+      0n
+    case Con{x, rest}:
+      listed.pick(String.eq(x, name), listed(name, rest))
+
+# whether every name after prev is no greater than the one before it
+def ascending.from(xs: List<&2, String>, +prev: String) -> Bool:
+  match xs:
+    case Nil{}:
+      True{}
+    case Con{+y, rest}:
+      Bool.and(String.is_le(prev, y), ascending.from(rest, y))
+
+# whether every name is no greater by String.order than the one after it
+def ascending(xs: List<&2, String>) -> Bool:
+  match xs:
+    case Nil{}:
+      True{}
+    case Con{+x, rest}:
+      ascending.from(rest, x)
+
+# LAW: a name that is neither . nor .. is answered as many times as the raw
+# names hold it, and . and .. never
+# SYS-DIR-1
+law dir_count:
+  for +raw: List<&2, String>
+  for +name: String
+  {listed(name, Dir.dir.names(raw))
+    == Bool.pick(Nat, Bool.or(String.eq(name, "."), String.eq(name, "..")),
+      0n, listed(name, raw)) : Nat}
+
+# LAW: the answer is ascending by String.order
+# SYS-DIR-2
+law dir_sorted:
+  for raw: List<&2, String>
+  {ascending(Dir.dir.names(raw)) == True{} : Bool}
+
+# LAW: a failed directory read is the answer unchanged
+# SYS-DIR-3
+law dir_fail:
+  for code: U32
+  for why: String
+  {Dir.dir.step(Fail{(code, why)}) == Fail{(code, why)}
+    : Result<&1, &1, U32 & String, List<&2, String>>}
+
+# LAW: a directory read's names are answered as dir.names gives them
+# SYS-DIR-3
+law dir_done:
+  for raw: List<&2, String>
+  {Dir.dir.step(Done{raw}) == Done{Dir.dir.names(raw)}
+    : Result<&1, &1, U32 & String, List<&2, String>>}
+
+# --- errors (SYS-ERR) ---
+
+# the common Linux codes and glibc's text for each, as Python's os.strerror
+# gives it
+def strerror() -> Err.err.Table():
+  [
+    (1, "Operation not permitted"),
+    (2, "No such file or directory"),
+    (3, "No such process"),
+    (4, "Interrupted system call"),
+    (5, "Input/output error"),
+    (6, "No such device or address"),
+    (7, "Argument list too long"),
+    (8, "Exec format error"),
+    (9, "Bad file descriptor"),
+    (10, "No child processes"),
+    (11, "Resource temporarily unavailable"),
+    (12, "Cannot allocate memory"),
+    (13, "Permission denied"),
+    (14, "Bad address"),
+    (15, "Block device required"),
+    (16, "Device or resource busy"),
+    (17, "File exists"),
+    (18, "Invalid cross-device link"),
+    (19, "No such device"),
+    (20, "Not a directory"),
+    (21, "Is a directory"),
+    (22, "Invalid argument"),
+    (23, "Too many open files in system"),
+    (24, "Too many open files"),
+    (25, "Inappropriate ioctl for device"),
+    (26, "Text file busy"),
+    (27, "File too large"),
+    (28, "No space left on device"),
+    (29, "Illegal seek"),
+    (30, "Read-only file system"),
+    (31, "Too many links"),
+    (32, "Broken pipe"),
+    (33, "Numerical argument out of domain"),
+    (34, "Numerical result out of range"),
+    (35, "Resource deadlock avoided"),
+    (36, "File name too long"),
+    (37, "No locks available"),
+    (38, "Function not implemented"),
+    (39, "Directory not empty"),
+    (40, "Too many levels of symbolic links"),
+    (84, "Invalid or incomplete multibyte or wide character"),
+    (95, "Operation not supported"),
+    (110, "Connection timed out"),
+    (111, "Connection refused"),
+    (112, "Host is down"),
+    (113, "No route to host"),
+    (116, "Stale file handle"),
+    (122, "Disk quota exceeded"),
+    (125, "Operation canceled")
+  ]
+
+# the hex digit at a place of "0123456789abcdef", '0' past it
+def hexc(place: U32) -> Char:
+  Err.err.hex.or(String.get("0123456789abcdef", U32.to_nat(place)))
+
+# LAW: a code's text is looked up in strerror, with why for a code it lacks
+# SYS-ERR-1
+law err_table:
+  for +code: U32
+  for +why: String
+  {Err.err.text(code, why) == Err.err.look(strerror(), code, why) : String}
+
+# LAW: a code no entry has is written with why
+# SYS-ERR-1
+law look_none:
+  for +code: U32
+  for +why: String
+  {Err.err.look(Nil{}, code, why) == why : String}
+
+# LAW: the first entry with the code gives its text
+# SYS-ERR-1
+law look_hit:
+  for k: U32
+  for text: String
+  for rest: Err.err.Table()
+  for +code: U32
+  for +why: String
+  for e: {U32.is_eq(code, k) == True{} : Bool}
+  {Err.err.look(Con{(k, text), rest}, code, why) == text : String}
+
+# LAW: an entry with another code is passed over
+# SYS-ERR-1
+law look_miss:
+  for k: U32
+  for text: String
+  for rest: Err.err.Table()
+  for +code: U32
+  for +why: String
+  for e: {U32.is_eq(code, k) == False{} : Bool}
+  {Err.err.look(Con{(k, text), rest}, code, why)
+    == Err.err.look(rest, code, why) : String}
+
+# LAW: [Errno N] text: repr(path)
+# SYS-ERR-2
+law err_os:
+  for +code: U32
+  for +why: String
+  for +path: String
+  {Err.err.os(code, why, path) == "[Errno " ++ U32.show(code) ++ "] "
+    ++ Err.err.text(code, why) ++ ": " ++ Err.err.repr(path) : String}
+
+# LAW: repr is the quote, the escaped characters and the quote
+# SYS-ERR-3
+law repr_shape:
+  for +path: String
+  {Err.err.repr(path) == SCon{Err.err.quote(path),
+    Err.err.go(Err.err.quote(path), path)
+      ++ SCon{Err.err.quote(path), SNil{}}} : String}
+
+# LAW: a path with a ' and no " is quoted with "
+# SYS-ERR-3
+law quote_double:
+  for +path: String
+  for one: {String.contains(path, "'") == True{} : Bool}
+  for two: {String.contains(path, "\"") == False{} : Bool}
+  {Err.err.quote(path) == '"' : Char}
+
+# LAW: a path with no ' is quoted with '
+# SYS-ERR-3
+law quote_plain:
+  for +path: String
+  for e: {String.contains(path, "'") == False{} : Bool}
+  {Err.err.quote(path) == '\'' : Char}
+
+# LAW: a path with a " is quoted with '
+# SYS-ERR-3
+law quote_both:
+  for +path: String
+  for e: {String.contains(path, "\"") == True{} : Bool}
+  {Err.err.quote(path) == '\'' : Char}
+
+# LAW: no characters are written as nothing
+# SYS-ERR-3
+law go_empty:
+  for +q: Char
+  {Err.err.go(q, "") == "" : String}
+
+# LAW: the characters are escaped one by one, in order
+# SYS-ERR-3
+law go_char:
+  for +q: Char
+  for c: Char
+  for t: String
+  {Err.err.go(q, SCon{c, t}) == Err.err.esc(q, c) ++ Err.err.go(q, t)
+    : String}
+
+# LAW: a tab is written \t
+# SYS-ERR-3
+law esc_tab:
+  for +q: Char
+  {Err.err.esc(q, '\t') == "\\t" : String}
+
+# LAW: a newline is written \n
+# SYS-ERR-3
+law esc_newline:
+  for +q: Char
+  {Err.err.esc(q, '\n') == "\\n" : String}
+
+# LAW: a carriage return is written \r
+# SYS-ERR-3
+law esc_return:
+  for +q: Char
+  {Err.err.esc(q, '\r') == "\\r" : String}
+
+# LAW: every other code point below U+0020, U+007F to U+00A0, and U+00AD is
+# written \x and two hex digits
+# SYS-ERR-3
+law esc_hex:
+  for +q: Char
+  for +x: U32
+  for set: {Bool.or(U32.is_lt(x, 32), Bool.or(Bool.and(U32.is_ge(x, 127),
+    U32.is_le(x, 160)), U32.is_eq(x, 173))) == True{} : Bool}
+  for tab: {U32.is_eq(x, 9) == False{} : Bool}
+  for nl: {U32.is_eq(x, 10) == False{} : Bool}
+  for cr: {U32.is_eq(x, 13) == False{} : Bool}
+  {Err.err.esc(q, Chr{x}) == "\\x" ++ Err.err.hex2(x) : String}
+
+# LAW: the two hex digits are lowercase, the high four bits first
+# SYS-ERR-3
+law hex_pair:
+  for +x: U32
+  {Err.err.hex2(x) == SCon{hexc(((x / 16 : U32) % 16 : U32)),
+    SCon{hexc((x % 16 : U32)), SNil{}}} : String}
+
+# LAW: a backslash is written twice
+# SYS-ERR-3
+law esc_backslash:
+  for +q: Char
+  {Err.err.esc(q, '\\') == "\\\\" : String}
+
+# LAW: the chosen quote is written after a backslash
+# SYS-ERR-3
+law esc_quote:
+  for +q: Char
+  for +x: U32
+  for set: {Bool.or(U32.is_lt(x, 32), Bool.or(Bool.and(U32.is_ge(x, 127),
+    U32.is_le(x, 160)), U32.is_eq(x, 173))) == False{} : Bool}
+  for bs: {U32.is_eq(x, 92) == False{} : Bool}
+  for hit: {Char.is_eq(Chr{x}, q) == True{} : Bool}
+  {Err.err.esc(q, Chr{x}) == SCon{'\\', SCon{q, SNil{}}} : String}
+
+# LAW: every other character is written as itself
+# SYS-ERR-3
+law esc_plain:
+  for +q: Char
+  for +x: U32
+  for set: {Bool.or(U32.is_lt(x, 32), Bool.or(Bool.and(U32.is_ge(x, 127),
+    U32.is_le(x, 160)), U32.is_eq(x, 173))) == False{} : Bool}
+  for bs: {U32.is_eq(x, 92) == False{} : Bool}
+  for miss: {Char.is_eq(Chr{x}, q) == False{} : Bool}
+  {Err.err.esc(q, Chr{x}) == SCon{Chr{x}, SNil{}} : String}

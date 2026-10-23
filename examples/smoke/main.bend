@@ -1,5 +1,5 @@
 # ezsys smoke: save a file atomically, read it back, print the wall clock,
-# fill a template
+# fill a template, list a directory, write a failure as Python does
 import Base
 import ../../main.bend as Sys
 
@@ -19,6 +19,17 @@ def saved(res: Result<&1, &1, U32 & String, Unit>) -> String:
     case Done{_u}:
       "saved"
 
+# a directory's names, one line each, or the failure as Python writes it
+def listed(
+  +dir: String,
+  res: Result<&1, &1, U32 & String, List<&2, String>>
+) -> String:
+  match res:
+    case Fail{(code, why)}:
+      Sys.err.os(code, why, dir)
+    case Done{names}:
+      String.join(names, "\n")
+
 # save, read back, read a missing file, then the clock, env and templates
 def main() -> IO(Unit):
   do IO<Unit>:
@@ -36,3 +47,7 @@ def main() -> IO(Unit):
     IO.print("env: " ++ unset)
     IO.print(Sys.text.fill("Hello {{name}}, it is {{when}} {{unknown}}", [("name", "Noah"), ("when", now)]))
     IO.print(Sys.text.fill_with("<!--", "-->", "<ul>\n  <!--HOSTS-->\n</ul>", [("HOSTS", "<li>pylon</li>")]))
+    l : Result<&1, &1, U32 & String, List<&2, String>> <- Sys.dir.list(dir)
+    IO.print("list:\n" ++ listed(dir, l))
+    n : Result<&1, &1, U32 & String, List<&2, String>> <- Sys.dir.list(dir ++ "/no-such-dir")
+    IO.print(listed(dir ++ "/no-such-dir", n))

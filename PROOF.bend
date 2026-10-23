@@ -3,6 +3,8 @@ import Base
 import ./src/step.bend as Step
 import ./src/clock.bend as Clock
 import ./src/text.bend as Text
+import ./src/dir.bend as Dir
+import ./src/errno.bend as Err
 import ./LAWS.bend as Laws
 
 # --- Bool facts ---
@@ -834,3 +836,834 @@ def Laws.iso_shape(secs, ms):
       Equal.cong(String, String, x => "####-##-##" ++ SCon{'T', x},
         Laws.shape(Clock.time.clock((secs % 86400 : U32), ms)),
         "##:##:##.###Z", clock_shape((secs % 86400 : U32), ms))))
+
+# --- errors ---
+
+def Laws.err_table(_code, _why):
+  {==}
+
+def Laws.look_none(_code, _why):
+  {==}
+
+def Laws.look_hit(k, text, rest, code, why, e):
+  %Equal.sym(Bool, U32.is_eq(code, k), True{}, e)
+    : {Err.err.when(_, _u => text, _u => Err.err.look(rest, code, why))
+      == text : String}
+  {==}
+
+def Laws.look_miss(k, text, rest, code, why, e):
+  %Equal.sym(Bool, U32.is_eq(code, k), False{}, e)
+    : {Err.err.when(_, _u => text, _u => Err.err.look(rest, code, why))
+      == Err.err.look(rest, code, why) : String}
+  {==}
+
+def Laws.err_os(_code, _why, _path):
+  {==}
+
+def Laws.repr_shape(_path):
+  {==}
+
+def Laws.quote_double(path, one, two):
+  %Equal.sym(Bool, String.contains(path, "'"), True{}, one)
+    : {Err.err.quote.pick(Bool.and(_,
+      Bool.not(String.contains(path, "\"")))) == '"' : Char}
+  %Equal.sym(Bool, String.contains(path, "\""), False{}, two)
+    : {Err.err.quote.pick(Bool.not(_)) == '"' : Char}
+  {==}
+
+def Laws.quote_plain(path, e):
+  %Equal.sym(Bool, String.contains(path, "'"), False{}, e)
+    : {Err.err.quote.pick(Bool.and(_,
+      Bool.not(String.contains(path, "\"")))) == '\'' : Char}
+  {==}
+
+# and of anything with false is false
+law and_false:
+  for a: Bool
+  {Bool.and(a, False{}) == False{} : Bool}
+
+def and_false(a):
+  match a:
+    case False{}:
+      {==}
+    case True{}:
+      {==}
+
+def Laws.quote_both(path, e):
+  %Equal.sym(Bool, String.contains(path, "\""), True{}, e)
+    : {Err.err.quote.pick(Bool.and(String.contains(path, "'"), Bool.not(_)))
+      == '\'' : Char}
+  %Equal.sym(Bool, Bool.and(String.contains(path, "'"), False{}), False{},
+    and_false(String.contains(path, "'")))
+    : {Err.err.quote.pick(_) == '\'' : Char}
+  {==}
+
+def Laws.go_empty(_q):
+  {==}
+
+def Laws.go_char(_q, _c, _t):
+  {==}
+
+def Laws.esc_tab(_q):
+  {==}
+
+def Laws.esc_newline(_q):
+  {==}
+
+def Laws.esc_return(_q):
+  {==}
+
+def Laws.esc_backslash(_q):
+  {==}
+
+def Laws.hex_pair(_x):
+  {==}
+
+def Laws.esc_hex(q, x, set, tab, nl, cr):
+  %Equal.sym(Bool, Err.err.hexed(x), True{}, set)
+    : {Err.err.when(_, _u => Err.err.ctl(x), _u => Err.err.plain(q, x))
+      == "\\x" ++ Err.err.hex2(x) : String}
+  %Equal.sym(Bool, U32.is_eq(x, 9), False{}, tab)
+    : {Err.err.when(_, _u => "\\t",
+      _u => Err.err.when(U32.is_eq(x, 10), _v => "\\n",
+        _v => Err.err.when(U32.is_eq(x, 13), _w => "\\r",
+          _w => "\\x" ++ Err.err.hex2(x))))
+      == "\\x" ++ Err.err.hex2(x) : String}
+  %Equal.sym(Bool, U32.is_eq(x, 10), False{}, nl)
+    : {Err.err.when(_, _v => "\\n",
+      _v => Err.err.when(U32.is_eq(x, 13), _w => "\\r",
+        _w => "\\x" ++ Err.err.hex2(x)))
+      == "\\x" ++ Err.err.hex2(x) : String}
+  %Equal.sym(Bool, U32.is_eq(x, 13), False{}, cr)
+    : {Err.err.when(_, _w => "\\r", _w => "\\x" ++ Err.err.hex2(x))
+      == "\\x" ++ Err.err.hex2(x) : String}
+  {==}
+
+def Laws.esc_quote(q, x, set, bs, hit):
+  %Equal.sym(Bool, Err.err.hexed(x), False{}, set)
+    : {Err.err.when(_, _u => Err.err.ctl(x), _u => Err.err.plain(q, x))
+      == SCon{'\\', SCon{q, SNil{}}} : String}
+  %Equal.sym(Bool, U32.is_eq(x, 92), False{}, bs)
+    : {Err.err.when(_, _u => "\\\\",
+      _u => Err.err.when(Char.is_eq(Chr{x}, q),
+        _v => SCon{'\\', SCon{q, SNil{}}}, _v => SCon{Chr{x}, SNil{}}))
+      == SCon{'\\', SCon{q, SNil{}}} : String}
+  %Equal.sym(Bool, Char.is_eq(Chr{x}, q), True{}, hit)
+    : {Err.err.when(_, _v => SCon{'\\', SCon{q, SNil{}}},
+      _v => SCon{Chr{x}, SNil{}}) == SCon{'\\', SCon{q, SNil{}}} : String}
+  {==}
+
+def Laws.esc_plain(q, x, set, bs, miss):
+  %Equal.sym(Bool, Err.err.hexed(x), False{}, set)
+    : {Err.err.when(_, _u => Err.err.ctl(x), _u => Err.err.plain(q, x))
+      == SCon{Chr{x}, SNil{}} : String}
+  %Equal.sym(Bool, U32.is_eq(x, 92), False{}, bs)
+    : {Err.err.when(_, _u => "\\\\",
+      _u => Err.err.when(Char.is_eq(Chr{x}, q),
+        _v => SCon{'\\', SCon{q, SNil{}}}, _v => SCon{Chr{x}, SNil{}}))
+      == SCon{Chr{x}, SNil{}} : String}
+  %Equal.sym(Bool, Char.is_eq(Chr{x}, q), False{}, miss)
+    : {Err.err.when(_, _v => SCon{'\\', SCon{q, SNil{}}},
+      _v => SCon{Chr{x}, SNil{}}) == SCon{Chr{x}, SNil{}} : String}
+  {==}
+
+# --- directories ---
+
+def Laws.dir_fail(_code, _why):
+  {==}
+
+def Laws.dir_done(_raw):
+  {==}
+
+# --- order facts ---
+
+# a comparison seen from the other side
+def cflip(c: Cmp) -> Cmp:
+  match c:
+    case LT{}:
+      GT{}
+    case EQ{}:
+      EQ{}
+    case GT{}:
+      LT{}
+
+# two bits compared the other way round give the flipped answer
+law bool_cmp_flip:
+  for a: Bool
+  for b: Bool
+  {Bool.cmp(b, a) == cflip(Bool.cmp(a, b)) : Cmp}
+
+def bool_cmp_flip(a, b):
+  match a b:
+    case False{} False{}:
+      {==}
+    case False{} True{}:
+      {==}
+    case True{} False{}:
+      {==}
+    case True{} True{}:
+      {==}
+
+# the last step of a word comparison, flipped
+law fin_flip:
+  for +ab: Bool
+  for +bb: Bool
+  for t: Cmp
+  {Word.cmp.fin(bb, ab, cflip(t)) == cflip(Word.cmp.fin(ab, bb, t)) : Cmp}
+
+def fin_flip(ab, bb, t):
+  match t:
+    case LT{}:
+      {==}
+    case EQ{}:
+      bool_cmp_flip(ab, bb)
+    case GT{}:
+      {==}
+
+# two words compared the other way round give the flipped answer
+law word_cmp_flip:
+  for n: Nat
+  for +a: Word(n)
+  for +b: Word(n)
+  {Word.cmp(n, b, a) == cflip(Word.cmp(n, a, b)) : Cmp}
+
+def word_cmp_flip(n, a, b):
+  match n:
+    case 0n:
+      {==}
+    case 1n+(+p):
+      match a b:
+        case WCon{+ab, +at} WCon{+bb, +bt}:
+          %Equal.sym(Cmp, Word.cmp(p, bt, at), cflip(Word.cmp(p, at, bt)),
+            word_cmp_flip(p, at, bt))
+            : {Word.cmp.fin(bb, ab, _) == cflip(Word.cmp.fin(ab, bb,
+              Word.cmp(p, at, bt))) : Cmp}
+          fin_flip(ab, bb, Word.cmp(p, at, bt))
+
+# two numbers compared the other way round give the flipped answer
+law u32_cmp_flip:
+  for +x: U32
+  for +y: U32
+  {U32.cmp(y, x) == cflip(U32.cmp(x, y)) : Cmp}
+
+def u32_cmp_flip(x, y):
+  match x y:
+    case U32{+a} U32{+b}:
+      word_cmp_flip(32n, a, b)
+
+# two texts compared the other way round give the flipped answer
+law order_flip:
+  for +a: String
+  for +b: String
+  for +c: Cmp
+  {String.order.go(b, a, cflip(c)) == cflip(String.order.go(a, b, c)) : Cmp}
+
+def order_flip(a, b, c):
+  match a b:
+    case SNil{} SNil{}:
+      match c:
+        case LT{}:
+          {==}
+        case EQ{}:
+          {==}
+        case GT{}:
+          {==}
+    case SNil{} SCon{Chr{+y}, +t2}:
+      match c:
+        case LT{}:
+          {==}
+        case EQ{}:
+          {==}
+        case GT{}:
+          {==}
+    case SCon{Chr{+x}, +t1} SNil{}:
+      match c:
+        case LT{}:
+          {==}
+        case EQ{}:
+          {==}
+        case GT{}:
+          {==}
+    case SCon{Chr{+x}, +t1} SCon{Chr{+y}, +t2}:
+      match c:
+        case LT{}:
+          {==}
+        case EQ{}:
+          %Equal.sym(Cmp, U32.cmp(y, x), cflip(U32.cmp(x, y)),
+            u32_cmp_flip(x, y))
+            : {String.order.go(t2, t1, _)
+              == cflip(String.order.go(t1, t2, U32.cmp(x, y))) : Cmp}
+          order_flip(t1, t2, U32.cmp(x, y))
+        case GT{}:
+          {==}
+
+# a comparison that is not at most is at least, the other way round
+law le_flip:
+  for c: Cmp
+  for e: {Cmp.is_le(c) == False{} : Bool}
+  {Cmp.is_le(cflip(c)) == True{} : Bool}
+
+def le_flip(c, e):
+  match c:
+    case LT{}:
+      gone(&1, {False{} == True{} : Bool}, clash(e))
+    case EQ{}:
+      gone(&1, {True{} == True{} : Bool}, clash(e))
+    case GT{}:
+      {==}
+
+# String.order is total: a text not at most another is at least it
+law le_total:
+  for +x: String
+  for +y: String
+  for e: {String.is_le(x, y) == False{} : Bool}
+  {String.is_le(y, x) == True{} : Bool}
+
+def le_total(x, y, e):
+  %Equal.sym(Cmp, String.order.go(y, x, EQ{}),
+    cflip(String.order.go(x, y, EQ{})), order_flip(x, y, EQ{}))
+    : {Cmp.is_le(_) == True{} : Bool}
+  le_flip(String.order.go(x, y, EQ{}), e)
+
+# --- equal texts ---
+
+# bits that compare equal are equal
+law bool_cmp_eq:
+  for a: Bool
+  for b: Bool
+  for e: {Cmp.is_eq(Bool.cmp(a, b)) == True{} : Bool}
+  {a == b : Bool}
+
+def bool_cmp_eq(a, b, e):
+  match a b:
+    case False{} False{}:
+      {==}
+    case False{} True{}:
+      gone(&1, {False{} == True{} : Bool}, clash(Equal.sym(Bool, False{}, True{}, e)))
+    case True{} False{}:
+      gone(&1, {True{} == False{} : Bool}, clash(Equal.sym(Bool, False{}, True{}, e)))
+    case True{} True{}:
+      {==}
+
+# a word comparison that ends equal had equal rest
+law fin_eq_t:
+  for ab: Bool
+  for bb: Bool
+  for t: Cmp
+  for e: {Cmp.is_eq(Word.cmp.fin(ab, bb, t)) == True{} : Bool}
+  {Cmp.is_eq(t) == True{} : Bool}
+
+def fin_eq_t(_ab, _bb, t, e):
+  match t:
+    case LT{}:
+      gone(&1, {False{} == True{} : Bool}, clash(Equal.sym(Bool, False{}, True{}, e)))
+    case EQ{}:
+      {==}
+    case GT{}:
+      gone(&1, {False{} == True{} : Bool}, clash(Equal.sym(Bool, False{}, True{}, e)))
+
+# a word comparison that ends equal had equal first bits
+law fin_eq_h:
+  for ab: Bool
+  for bb: Bool
+  for t: Cmp
+  for e: {Cmp.is_eq(Word.cmp.fin(ab, bb, t)) == True{} : Bool}
+  {Cmp.is_eq(Bool.cmp(ab, bb)) == True{} : Bool}
+
+def fin_eq_h(ab, bb, t, e):
+  match t:
+    case LT{}:
+      gone(&1, {Cmp.is_eq(Bool.cmp(ab, bb)) == True{} : Bool},
+        clash(Equal.sym(Bool, False{}, True{}, e)))
+    case EQ{}:
+      e
+    case GT{}:
+      gone(&1, {Cmp.is_eq(Bool.cmp(ab, bb)) == True{} : Bool},
+        clash(Equal.sym(Bool, False{}, True{}, e)))
+
+# words that compare equal are equal
+law word_cmp_eq:
+  for n: Nat
+  for +a: Word(n)
+  for +b: Word(n)
+  for +e: {Cmp.is_eq(Word.cmp(n, a, b)) == True{} : Bool}
+  {a == b : Word(n)}
+
+def word_cmp_eq(n, a, b, e):
+  match n:
+    case 0n:
+      match a b:
+        case WNil{} WNil{}:
+          {==}
+    case 1n+(+p):
+      match a b:
+        case WCon{+ab, +at} WCon{+bb, +bt}:
+          %bool_cmp_eq(ab, bb, fin_eq_h(ab, bb, Word.cmp(p, at, bt), e))
+            : {WCon{ab, at} == WCon{_, bt} : Word(1n+p)}
+          Equal.cong(Word(p), Word(1n+p), w => WCon{ab, w}, at, bt,
+            word_cmp_eq(p, at, bt, fin_eq_t(ab, bb, Word.cmp(p, at, bt), e)))
+
+# numbers that compare equal are equal
+law u32_cmp_eq:
+  for +x: U32
+  for +y: U32
+  for e: {Cmp.is_eq(U32.cmp(x, y)) == True{} : Bool}
+  {x == y : U32}
+
+def u32_cmp_eq(x, y, e):
+  match x y:
+    case U32{+a} U32{+b}:
+      Equal.cong(Word(32n), U32, w => U32{w}, a, b, word_cmp_eq(32n, a, b, e))
+
+# a text comparison that ends equal started equal
+law order_eq_c:
+  for +a: String
+  for +b: String
+  for +c: Cmp
+  for e: {Cmp.is_eq(String.order.go(a, b, c)) == True{} : Bool}
+  {Cmp.is_eq(c) == True{} : Bool}
+
+def order_eq_c(a, b, c, e):
+  match a b:
+    case SNil{} SNil{}:
+      e
+    case SNil{} SCon{Chr{+y}, +t2}:
+      match c:
+        case LT{}:
+          e
+        case EQ{}:
+          {==}
+        case GT{}:
+          e
+    case SCon{Chr{+x}, +t1} SNil{}:
+      match c:
+        case LT{}:
+          e
+        case EQ{}:
+          {==}
+        case GT{}:
+          e
+    case SCon{Chr{+x}, +t1} SCon{Chr{+y}, +t2}:
+      match c:
+        case LT{}:
+          e
+        case EQ{}:
+          {==}
+        case GT{}:
+          e
+
+# texts whose comparison ends equal are equal
+law order_eq:
+  for +a: String
+  for +b: String
+  for +c: Cmp
+  for +e: {Cmp.is_eq(String.order.go(a, b, c)) == True{} : Bool}
+  {a == b : String}
+
+def order_eq(a, b, c, e):
+  match a b:
+    case SNil{} SNil{}:
+      {==}
+    case SNil{} SCon{Chr{+y}, +t2}:
+      match c:
+        case LT{}:
+          gone(&1, {SNil{} == SCon{Chr{y}, t2} : String}, clash(Equal.sym(Bool, False{}, True{}, e)))
+        case EQ{}:
+          gone(&1, {SNil{} == SCon{Chr{y}, t2} : String}, clash(Equal.sym(Bool, False{}, True{}, e)))
+        case GT{}:
+          gone(&1, {SNil{} == SCon{Chr{y}, t2} : String}, clash(Equal.sym(Bool, False{}, True{}, e)))
+    case SCon{Chr{+x}, +t1} SNil{}:
+      match c:
+        case LT{}:
+          gone(&1, {SCon{Chr{x}, t1} == SNil{} : String}, clash(Equal.sym(Bool, False{}, True{}, e)))
+        case EQ{}:
+          gone(&1, {SCon{Chr{x}, t1} == SNil{} : String}, clash(Equal.sym(Bool, False{}, True{}, e)))
+        case GT{}:
+          gone(&1, {SCon{Chr{x}, t1} == SNil{} : String}, clash(Equal.sym(Bool, False{}, True{}, e)))
+    case SCon{Chr{+x}, +t1} SCon{Chr{+y}, +t2}:
+      match c:
+        case LT{}:
+          gone(&1, {SCon{Chr{x}, t1} == SCon{Chr{y}, t2} : String}, clash(Equal.sym(Bool, False{}, True{}, e)))
+        case EQ{}:
+          %u32_cmp_eq(x, y, order_eq_c(t1, t2, U32.cmp(x, y), e))
+            : {SCon{Chr{x}, t1} == SCon{Chr{_}, t2} : String}
+          Equal.cong(String, String, s => SCon{Chr{x}, s}, t1, t2,
+            order_eq(t1, t2, U32.cmp(x, y), e))
+        case GT{}:
+          gone(&1, {SCon{Chr{x}, t1} == SCon{Chr{y}, t2} : String}, clash(Equal.sym(Bool, False{}, True{}, e)))
+
+# texts String.eq calls equal are equal
+law eq_sound:
+  for +a: String
+  for +b: String
+  for e: {String.eq(a, b) == True{} : Bool}
+  {a == b : String}
+
+def eq_sound(a, b, e):
+  order_eq(a, b, EQ{}, e)
+
+# --- counting names ---
+
+# two copies-when picks commute
+law pick_swap:
+  for a: Bool
+  for b: Bool
+  for +m: Nat
+  {Laws.listed.pick(a, Laws.listed.pick(b, m))
+    == Laws.listed.pick(b, Laws.listed.pick(a, m)) : Nat}
+
+def pick_swap(a, b, _m):
+  match a b:
+    case False{} False{}:
+      {==}
+    case False{} True{}:
+      {==}
+    case True{} False{}:
+      {==}
+    case True{} True{}:
+      {==}
+
+# a pick between two equal numbers is that number
+law pick_same:
+  for c: Bool
+  for +m: Nat
+  {Bool.pick(Nat, c, m, m) == m : Nat}
+
+def pick_same(c, _m):
+  match c:
+    case False{}:
+      {==}
+    case True{}:
+      {==}
+
+# inserting a name counts it once more when it is the name counted
+def insert_count.goal(
+  xs: List<&2, String>,
+  +x: String,
+  +name: String
+) -> Type:
+  {Laws.listed(name, Dir.dir.insert(x, xs))
+    == Laws.listed.pick(String.eq(x, name), Laws.listed(name, xs)) : Nat}
+
+law insert_count:
+  for xs: List<&2, String>
+  for +x: String
+  for +name: String
+  insert_count.goal(xs, x, name)
+
+def insert_count.at(
+  +x: String,
+  +y: String,
+  +ys: List<&2, String>,
+  +name: String,
+  b: Bool,
+  e: {String.is_le(x, y) == b : Bool},
+  ih: insert_count.goal(ys, x, name)
+) -> insert_count.goal(Con{y, ys}, x, name):
+  match b:
+    case True{}:
+      %Equal.sym(Bool, String.is_le(x, y), b, e)
+        : {Laws.listed(name, Dir.dir.insert.pick(_, x, y, ys,
+        _u => Dir.dir.insert(x, ys)))
+        == Laws.listed.pick(String.eq(x, name), Laws.listed(name, Con{y, ys}))
+        : Nat}
+      {==}
+    case False{}:
+      %Equal.sym(Bool, String.is_le(x, y), b, e)
+        : {Laws.listed(name, Dir.dir.insert.pick(_, x, y, ys,
+        _u => Dir.dir.insert(x, ys)))
+        == Laws.listed.pick(String.eq(x, name), Laws.listed(name, Con{y, ys}))
+        : Nat}
+      %Equal.sym(Nat, Laws.listed(name, Dir.dir.insert(x, ys)),
+        Laws.listed.pick(String.eq(x, name), Laws.listed(name, ys)), ih)
+        : {Laws.listed.pick(String.eq(y, name), _)
+        == Laws.listed.pick(String.eq(x, name),
+          Laws.listed.pick(String.eq(y, name), Laws.listed(name, ys))) : Nat}
+      pick_swap(String.eq(y, name), String.eq(x, name), Laws.listed(name, ys))
+
+def insert_count(xs, x, name):
+  match xs:
+    case Nil{}:
+      {==}
+    case Con{+y, +ys}:
+      insert_count.at(x, y, ys, name, String.is_le(x, y), {==},
+        insert_count(ys, x, name))
+
+# sorting keeps every name's count
+law sort_count:
+  for xs: List<&2, String>
+  for +name: String
+  {Laws.listed(name, Dir.dir.sort(xs)) == Laws.listed(name, xs) : Nat}
+
+def sort_count(xs, name):
+  match xs:
+    case Nil{}:
+      {==}
+    case Con{+x, +xt}:
+      %Equal.sym(Nat, Laws.listed(name, Dir.dir.insert(x, Dir.dir.sort(xt))),
+        Laws.listed.pick(String.eq(x, name), Laws.listed(name, Dir.dir.sort(xt))),
+        insert_count(Dir.dir.sort(xt), x, name))
+        : {_ == Laws.listed.pick(String.eq(x, name), Laws.listed(name, xt)) : Nat}
+      Equal.cong(Nat, Nat, m => Laws.listed.pick(String.eq(x, name), m),
+        Laws.listed(name, Dir.dir.sort(xt)), Laws.listed(name, xt),
+        sort_count(xt, name))
+
+# equal names are both dots or neither
+law dot_same:
+  for +x: String
+  for +name: String
+  for e: {String.eq(x, name) == True{} : Bool}
+  {Dir.dir.dot(x) == Dir.dir.dot(name) : Bool}
+
+def dot_same(x, name, e):
+  Equal.cong(String, Bool, +s => Dir.dir.dot(s), x, name, eq_sound(x, name, e))
+
+# what keeping the names does to a name's count
+def keep_count.goal(+xs: List<&2, String>, +name: String) -> Type:
+  {Laws.listed(name, Dir.dir.keep(xs))
+    == Bool.pick(Nat, Dir.dir.dot(name), 0n, Laws.listed(name, xs)) : Nat}
+
+# the count of a kept name, by whether the first raw name is a dot (d) and
+# is the name (h), given the count for the rest (ih)
+def keep_count.at(
+  +x: String,
+  +xt: List<&2, String>,
+  +name: String,
+  d: Bool,
+  +ed: {Dir.dir.dot(x) == d : Bool},
+  h: Bool,
+  +eh: {String.eq(x, name) == h : Bool},
+  ih: keep_count.goal(xt, name)
+) -> keep_count.goal(Con{x, xt}, name):
+  match d h:
+    case True{} True{}:
+      %Equal.sym(Bool, Dir.dir.dot(x), d, ed)
+        : {Laws.listed(name, Dir.dir.keep.pick(_, x, _u => Dir.dir.keep(xt)))
+        == Bool.pick(Nat, Dir.dir.dot(name), 0n,
+          Laws.listed.pick(String.eq(x, name), Laws.listed(name, xt))) : Nat}
+      %Equal.sym(Nat, Laws.listed(name, Dir.dir.keep(xt)),
+        Bool.pick(Nat, Dir.dir.dot(name), 0n, Laws.listed(name, xt)), ih)
+        : {_ == Bool.pick(Nat, Dir.dir.dot(name), 0n,
+          Laws.listed.pick(String.eq(x, name), Laws.listed(name, xt))) : Nat}
+      %Equal.trans(Bool, True{}, Dir.dir.dot(x), Dir.dir.dot(name),
+        Equal.sym(Bool, Dir.dir.dot(x), True{}, ed), dot_same(x, name, eh))
+        : {Bool.pick(Nat, _, 0n, Laws.listed(name, xt))
+          == Bool.pick(Nat, _, 0n,
+            Laws.listed.pick(String.eq(x, name), Laws.listed(name, xt))) : Nat}
+      {==}
+    case True{} False{}:
+      %Equal.sym(Bool, Dir.dir.dot(x), d, ed)
+        : {Laws.listed(name, Dir.dir.keep.pick(_, x, _u => Dir.dir.keep(xt)))
+        == Bool.pick(Nat, Dir.dir.dot(name), 0n,
+          Laws.listed.pick(String.eq(x, name), Laws.listed(name, xt))) : Nat}
+      %Equal.sym(Nat, Laws.listed(name, Dir.dir.keep(xt)),
+        Bool.pick(Nat, Dir.dir.dot(name), 0n, Laws.listed(name, xt)), ih)
+        : {_ == Bool.pick(Nat, Dir.dir.dot(name), 0n,
+          Laws.listed.pick(String.eq(x, name), Laws.listed(name, xt))) : Nat}
+      %Equal.sym(Bool, String.eq(x, name), h, eh)
+        : {Bool.pick(Nat, Dir.dir.dot(name), 0n, Laws.listed(name, xt))
+        == Bool.pick(Nat, Dir.dir.dot(name), 0n,
+          Laws.listed.pick(_, Laws.listed(name, xt))) : Nat}
+      {==}
+    case False{} True{}:
+      %Equal.sym(Bool, Dir.dir.dot(x), d, ed)
+        : {Laws.listed(name, Dir.dir.keep.pick(_, x, _u => Dir.dir.keep(xt)))
+        == Bool.pick(Nat, Dir.dir.dot(name), 0n,
+          Laws.listed.pick(String.eq(x, name), Laws.listed(name, xt))) : Nat}
+      %Equal.sym(Nat, Laws.listed(name, Dir.dir.keep(xt)),
+        Bool.pick(Nat, Dir.dir.dot(name), 0n, Laws.listed(name, xt)), ih)
+        : {Laws.listed.pick(String.eq(x, name), _)
+          == Bool.pick(Nat, Dir.dir.dot(name), 0n,
+            Laws.listed.pick(String.eq(x, name), Laws.listed(name, xt))) : Nat}
+      %Equal.sym(Bool, String.eq(x, name), h, eh)
+        : {Laws.listed.pick(_,
+        Bool.pick(Nat, Dir.dir.dot(name), 0n, Laws.listed(name, xt)))
+        == Bool.pick(Nat, Dir.dir.dot(name), 0n,
+          Laws.listed.pick(_, Laws.listed(name, xt))) : Nat}
+      %Equal.trans(Bool, False{}, Dir.dir.dot(x), Dir.dir.dot(name),
+        Equal.sym(Bool, Dir.dir.dot(x), False{}, ed), dot_same(x, name, eh))
+        : {Laws.listed.pick(True{}, Bool.pick(Nat, _, 0n, Laws.listed(name, xt)))
+          == Bool.pick(Nat, _, 0n,
+            Laws.listed.pick(True{}, Laws.listed(name, xt))) : Nat}
+      {==}
+    case False{} False{}:
+      %Equal.sym(Bool, Dir.dir.dot(x), d, ed)
+        : {Laws.listed(name, Dir.dir.keep.pick(_, x, _u => Dir.dir.keep(xt)))
+        == Bool.pick(Nat, Dir.dir.dot(name), 0n,
+          Laws.listed.pick(String.eq(x, name), Laws.listed(name, xt))) : Nat}
+      %Equal.sym(Nat, Laws.listed(name, Dir.dir.keep(xt)),
+        Bool.pick(Nat, Dir.dir.dot(name), 0n, Laws.listed(name, xt)), ih)
+        : {Laws.listed.pick(String.eq(x, name), _)
+          == Bool.pick(Nat, Dir.dir.dot(name), 0n,
+            Laws.listed.pick(String.eq(x, name), Laws.listed(name, xt))) : Nat}
+      %Equal.sym(Bool, String.eq(x, name), h, eh)
+        : {Laws.listed.pick(_,
+        Bool.pick(Nat, Dir.dir.dot(name), 0n, Laws.listed(name, xt)))
+        == Bool.pick(Nat, Dir.dir.dot(name), 0n,
+          Laws.listed.pick(_, Laws.listed(name, xt))) : Nat}
+      {==}
+
+# keeping counts a name as the raw names do, and a dot never
+law keep_count:
+  for xs: List<&2, String>
+  for +name: String
+  keep_count.goal(xs, name)
+
+def keep_count(xs, name):
+  match xs:
+    case Nil{}:
+      Equal.sym(Nat, Bool.pick(Nat, Dir.dir.dot(name), 0n, 0n), 0n,
+        pick_same(Dir.dir.dot(name), 0n))
+    case Con{+x, +xt}:
+      keep_count.at(x, xt, name, Dir.dir.dot(x), {==}, String.eq(x, name), {==},
+        keep_count(xt, name))
+
+def Laws.dir_count(raw, name):
+  Equal.trans(Nat, Laws.listed(name, Dir.dir.sort(Dir.dir.keep(raw))),
+    Laws.listed(name, Dir.dir.keep(raw)),
+    Bool.pick(Nat, Dir.dir.dot(name), 0n, Laws.listed(name, raw)),
+    sort_count(Dir.dir.keep(raw), name), keep_count(raw, name))
+
+# --- sorting names ---
+
+# a true and has a true first test
+law and_true_l:
+  for a: Bool
+  for b: Bool
+  for e: {Bool.and(a, b) == True{} : Bool}
+  {a == True{} : Bool}
+
+def and_true_l(a, _b, e):
+  match a:
+    case False{}:
+      gone(&1, {False{} == True{} : Bool},
+        clash(Equal.sym(Bool, False{}, True{}, e)))
+    case True{}:
+      {==}
+
+# a true and has a true second test
+law and_true_r:
+  for a: Bool
+  for b: Bool
+  for e: {Bool.and(a, b) == True{} : Bool}
+  {b == True{} : Bool}
+
+def and_true_r(a, b, e):
+  match a:
+    case False{}:
+      gone(&1, {b == True{} : Bool}, clash(Equal.sym(Bool, False{}, True{}, e)))
+    case True{}:
+      e
+
+# a name put into the names after prev, no less than prev, keeps them
+# ascending from prev
+def insert_from.goal(
+  xs: List<&2, String>,
+  +prev: String,
+  +x: String
+) -> Type:
+  {Laws.ascending.from(Dir.dir.insert(x, xs), prev) == True{} : Bool}
+
+law insert_from:
+  for +xs: List<&2, String>
+  for +prev: String
+  for +x: String
+  for e1: {String.is_le(prev, x) == True{} : Bool}
+  for +e2: {Laws.ascending.from(xs, prev) == True{} : Bool}
+  insert_from.goal(xs, prev, x)
+
+def insert_from.at(
+  +prev: String,
+  +x: String,
+  +y: String,
+  +ys: List<&2, String>,
+  b: Bool,
+  +eb: {String.is_le(x, y) == b : Bool},
+  e1: {String.is_le(prev, x) == True{} : Bool},
+  p1: {String.is_le(prev, y) == True{} : Bool},
+  p2: {Laws.ascending.from(ys, y) == True{} : Bool},
+  ih: {String.is_le(y, x) == True{} : Bool} -> insert_from.goal(ys, y, x)
+) -> insert_from.goal(Con{y, ys}, prev, x):
+  match b:
+    case True{}:
+      %Equal.sym(Bool, String.is_le(x, y), True{}, eb)
+        : {Laws.ascending.from(Dir.dir.insert.pick(_, x, y, ys,
+          _u => Dir.dir.insert(x, ys)), prev) == True{} : Bool}
+      %Equal.sym(Bool, String.is_le(x, y), True{}, eb)
+        : {Bool.and(String.is_le(prev, x),
+          Bool.and(_, Laws.ascending.from(ys, y))) == True{} : Bool}
+      %Equal.sym(Bool, String.is_le(prev, x), True{}, e1)
+        : {Bool.and(_, Laws.ascending.from(ys, y)) == True{} : Bool}
+      p2
+    case False{}:
+      %Equal.sym(Bool, String.is_le(x, y), False{}, eb)
+        : {Laws.ascending.from(Dir.dir.insert.pick(_, x, y, ys,
+          _u => Dir.dir.insert(x, ys)), prev) == True{} : Bool}
+      %Equal.sym(Bool, String.is_le(prev, y), True{}, p1)
+        : {Bool.and(_, Laws.ascending.from(Dir.dir.insert(x, ys), y))
+          == True{} : Bool}
+      ih(le_total(x, y, eb))
+
+def insert_from(xs, prev, x, e1, e2):
+  match xs:
+    case Nil{}:
+      %Equal.sym(Bool, String.is_le(prev, x), True{}, e1)
+        : {Bool.and(_, True{}) == True{} : Bool}
+      {==}
+    case Con{+y, +ys}:
+      insert_from.at(prev, x, y, ys, String.is_le(x, y), {==}, e1,
+        and_true_l(String.is_le(prev, y), Laws.ascending.from(ys, y), e2),
+        and_true_r(String.is_le(prev, y), Laws.ascending.from(ys, y), e2),
+        h => insert_from(ys, y, x, h,
+          and_true_r(String.is_le(prev, y), Laws.ascending.from(ys, y), e2)))
+
+# a name put into ascending names keeps them ascending
+law asc_insert:
+  for +xs: List<&2, String>
+  for +x: String
+  for +e: {Laws.ascending(xs) == True{} : Bool}
+  {Laws.ascending(Dir.dir.insert(x, xs)) == True{} : Bool}
+
+def asc_insert.at(
+  +x: String,
+  +y: String,
+  +ys: List<&2, String>,
+  b: Bool,
+  +eb: {String.is_le(x, y) == b : Bool},
+  e: {Laws.ascending.from(ys, y) == True{} : Bool}
+) -> {Laws.ascending(Dir.dir.insert(x, Con{y, ys})) == True{} : Bool}:
+  match b:
+    case True{}:
+      %Equal.sym(Bool, String.is_le(x, y), True{}, eb)
+        : {Laws.ascending(Dir.dir.insert.pick(_, x, y, ys,
+          _u => Dir.dir.insert(x, ys))) == True{} : Bool}
+      %Equal.sym(Bool, String.is_le(x, y), True{}, eb)
+        : {Bool.and(_, Laws.ascending.from(ys, y)) == True{} : Bool}
+      e
+    case False{}:
+      %Equal.sym(Bool, String.is_le(x, y), False{}, eb)
+        : {Laws.ascending(Dir.dir.insert.pick(_, x, y, ys,
+          _u => Dir.dir.insert(x, ys))) == True{} : Bool}
+      insert_from(ys, y, x, le_total(x, y, eb), e)
+
+def asc_insert(xs, x, e):
+  match xs:
+    case Nil{}:
+      {==}
+    case Con{+y, +ys}:
+      asc_insert.at(x, y, ys, String.is_le(x, y), {==}, e)
+
+# sorted names are ascending
+law asc_sort:
+  for +xs: List<&2, String>
+  {Laws.ascending(Dir.dir.sort(xs)) == True{} : Bool}
+
+def asc_sort(xs):
+  match xs:
+    case Nil{}:
+      {==}
+    case Con{+x, +xt}:
+      asc_insert(Dir.dir.sort(xt), x, asc_sort(xt))
+
+def Laws.dir_sorted(raw):
+  asc_sort(Dir.dir.keep(raw))

@@ -9,6 +9,7 @@
 import Base
 import ./src/clock.bend as Clock
 import ./src/text.bend as Text
+import ./src/errno.bend as Err
 import ./main.bend as Ez
 
 # LAW: time.iso is src/clock.bend's
@@ -45,4 +46,17 @@ def text_fill_is_text(_t, _pairs):
 
 # text_fill_with_is_text holds by unfolding the re-export
 def text_fill_with_is_text(_open, _close, _t, _pairs):
+  {==}
+
+# --- errors ---
+
+# LAW: err.os is src/errno.bend's
+law err_os_is_errno:
+  for code: U32
+  for why: String
+  for path: String
+  {Ez.err.os(code, why, path) == Err.err.os(code, why, path) : String}
+
+# err_os_is_errno holds by unfolding the re-export
+def err_os_is_errno(_code, _why, _path):
   {==}

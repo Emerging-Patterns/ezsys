@@ -1,11 +1,13 @@
 # ezsys: system helpers for Bend 2: whole-file reads and atomic saves,
-# environment variables with a default, the wall clock as ISO 8601 UTC, and
-# text templates. This file is the whole public interface; everything under
-# src/ is internal.
+# environment variables with a default, the wall clock as ISO 8601 UTC, text
+# templates, a directory's names, and a failure written as Python does.
+# This file is the whole public interface; everything under src/ is
+# internal.
 import Base
 import ./src/sys.bend as Sys
 import ./src/clock.bend as Clock
 import ./src/text.bend as Text
+import ./src/errno.bend as Err
 
 # a whole file's text; a failure to open or read it is a Fail, never an exit
 def file.read(path: String) -> IO(Result<&1, &1, U32 & String, String>):
@@ -58,3 +60,15 @@ def text.fill_with(
   pairs: List<(String & String)>
 ) -> String:
   Text.text.fill_with(open, close, template, Text.text.own(pairs))
+
+# a directory's names, sorted by code point, with no "." or ".."; a failure
+# to read it is a Fail, never an exit
+def dir.list(
+  path: String
+) -> IO(Result<&1, &1, U32 & String, List<&2, String>>):
+  Sys.sys.list(path)
+
+# a failed file operation as Python's OSError writes it:
+# `[Errno 2] No such file or directory: '/tmp/x'`
+def err.os(code: U32, why: String, path: String) -> String:
+  Err.err.os(code, why, path)
