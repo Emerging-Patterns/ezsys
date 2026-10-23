@@ -2,7 +2,8 @@
 
 System helpers for [Bend 2](https://github.com/bendlang/bend): whole-file
 reads and atomic saves, environment variables with a default, the wall
-clock as ISO 8601 UTC, and text templates.
+clock as ISO 8601 UTC, text templates, a directory's names, and a failed
+file operation written as Python writes an `OSError`.
 
 ## Install
 
@@ -37,6 +38,16 @@ ez add Emerging-Patterns/ezsys
 | `time.now_iso()` | `IO(String)` | `time.iso` of `time.now()` |
 | `text.fill(template, pairs)` | `String` | every `{{key}}` replaced by its value |
 | `text.fill_with(open, close, template, pairs)` | `String` | the same with other delimiters |
+| `text.strip(txt)`, `text.lstrip(txt)`, `text.rstrip(txt)` | `String` | Python's `str.strip()` and its two halves, with Python's whitespace (no-break space included) |
+| `text.replace(txt, old, new)` | `String` | every `old` replaced, left to right, as `str.replace` |
+| `text.split(txt, sep)` | `List<&2, String>` | the pieces between every `sep`, as `str.split(sep)` |
+| `text.find(txt, needle)` | `Maybe<&2, U32>` | where `needle` first starts, in code points, as `str.find` (`None` for `-1`) |
+| `text.lower(txt)`, `text.upper(txt)` | `String` | `str.lower()` and `str.upper()` for ASCII, Latin-1, Latin Extended-A, Greek and Cyrillic |
+| `text.pad_right(txt, width)` | `String` | `str.ljust(width)` |
+| `text.truncate(txt, width)` | `String` | `txt[:width]` |
+| `digits.cmp(lhs, rhs)` | `Cmp` | two strings of digits in numeric order, any length |
+| `dir.list(path)` | `IO(Result<&1, &1, U32 & String, List<&2, String>>)` | the directory's names, sorted, without `.` and `..` |
+| `err.os(code, why, path)` | `String` | `[Errno 2] No such file or directory: '/tmp/x'` |
 
 A failure is a value, Base's `Fail{(errno, message)}`, never an exit: match
 on it, or hand it to `IO.try` to exit with it. `file.save` is the one to use
@@ -79,6 +90,16 @@ of at least that many bytes; a pipe or a file that grows while it is read
 can take more than one, and a UTF-8 sequence cut between two chunks is read
 as U+FFFD.
 
+`dir.list` answers names, not paths, in code point order (the bytewise
+order of their UTF-8, so `sorted(os.listdir(path))` in Python), with no `.`
+or `..`; a symbolic link is listed by its own name and not followed. A name
+that is not valid UTF-8 is answered with U+FFFD in place of the bad bytes.
+
+`err.os(code, why, path)` writes a `Fail{(code, why)}` from a file operation
+the way Python's `OSError` does: glibc's text for the common Linux codes
+(the table is in SPEC.md), `why` for any other code, and the path as
+Python's `repr` writes it.
+
 `examples/smoke/main.bend` uses every helper:
 
 ```
@@ -101,9 +122,11 @@ What is proved: the shape of every `time.iso` (24 characters, digits where
 digits belong) and how it splits into the day's date and the time of day;
 the leap and century rules at 2000, 2023, 2024 and 2100 and the boundaries
 at 1970, 2000 and 2106; how a template's markers are replaced, kept or left
-alone; and every decision `file.read`, `file.save` and `env.or` make. What
-is trusted: the two effects ezsys adds (a flush-and-rename and the wall
-clock, each a C file with a JS twin), Base's file and environment effects,
+alone; every decision `file.read`, `file.save`, `env.or` and `dir.list`
+make (which names `dir.list` answers, how many times, and in what order);
+and how `err.os` writes a code and a path. What is trusted: the three
+effects ezsys adds (a flush-and-rename, the wall clock and a directory's
+names, each a C file with a JS twin), Base's file and environment effects,
 and the IO that runs them in order. The calendar for every other day is
 pending (SYS-TIME-5).
 

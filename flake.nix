@@ -76,8 +76,9 @@
           touch $out
         '';
         # examples/smoke on the C lane: build it, save a file atomically, read
-        # it back, read a missing file, and print the wall clock, which must
-        # be within a few seconds of `date -u`. A smoke run, not evidence for
+        # it back, read a missing file, print the wall clock, which must
+        # be within a few seconds of `date -u`, list the directory and a
+        # missing one. A smoke run, not evidence for
         # any SPEC.md row.
         smoke = pkgs.runCommand "ezsys-smoke" {
           nativeBuildInputs = [ bend llvm.clang ];
@@ -88,6 +89,7 @@
           cp -r ${self} src && chmod -R u+w src && cd src/examples/smoke
           bend main.bend -o smoke
           mkdir -p $TMPDIR/smoke
+          touch "$TMPDIR/smoke/b b" "$TMPDIR/smoke/.hidden" "$TMPDIR/smoke/héllo"
           before=$(date -u +%s)
           got=$(SMOKE_DIR=$TMPDIR/smoke ./smoke)
           after=$(date -u +%s)
@@ -103,6 +105,12 @@
           [ "$at" -ge "$((before - 2))" ] && [ "$at" -le "$((after + 2))" ] || exit 1
           echo "$got" | grep -qF "Hello Noah, it is $now {{unknown}}" || exit 1
           echo "$got" | grep -qx '  <li>pylon</li>' || exit 1
+          echo "$got" | grep -qx 'text: STRASSE|a,b,c|ΑΒ  |' || exit 1
+          # dir.list: names sorted by code point, no . or .., then a missing
+          # directory written as Python's OSError
+          echo "$got" | sed -n '/^list:$/,$p' | sed -n '2,5p' > listed
+          printf '%s\n' .hidden 'b b' ezsys-smoke.txt 'héllo' | diff - listed || exit 1
+          echo "$got" | grep -qxF "[Errno 2] No such file or directory: '$TMPDIR/smoke/no-such-dir'" || exit 1
           touch $out
         '';
         lint = ez.mkLint { src = self; };
