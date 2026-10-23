@@ -36,6 +36,9 @@ ez add Emerging-Patterns/ezsys
 | `time.now()` | `IO(U32 & U32)` | the wall clock: seconds since 1970-01-01T00:00:00Z and milliseconds |
 | `time.iso(secs, ms)` | `String` | `YYYY-MM-DDTHH:MM:SS.mmmZ` |
 | `time.now_iso()` | `IO(String)` | `time.iso` of `time.now()` |
+| `time.civil(secs)` | `U32 & U32 & U32 & U32 & U32 & U32 & U32` | year, month, day, hour, minute, second and ISO weekday (1 Monday to 7 Sunday), UTC |
+| `time.iso_week(secs)` | `U32 & U32` | the ISO 8601 week-numbering year and week |
+| `time.iso_week_text(secs)` | `String` | `2026-W43`, as `date -u +%G-W%V` |
 | `text.fill(template, pairs)` | `String` | every `{{key}}` replaced by its value |
 | `text.fill_with(open, close, template, pairs)` | `String` | the same with other delimiters |
 | `text.strip(txt)`, `text.lstrip(txt)`, `text.rstrip(txt)` | `String` | Python's `str.strip()` and its two halves, with Python's whitespace (no-break space included) |

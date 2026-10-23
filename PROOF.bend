@@ -219,6 +219,137 @@ def Laws.date_fields(_days):
 def Laws.last_second(_ms):
   {==}
 
+# --- weekdays and ISO weeks ---
+
+def Laws.weekday_epoch(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 0, e)
+    : {Clock.time.weekday(_) == 4 : U32}
+  {==}
+
+# a day on, then the rest, is the rest, then a day on
+law wd_go_next:
+  for num: Nat
+  for +wd: U32
+  {Clock.time.wd.go(num, Clock.time.wd.next(wd))
+    == Clock.time.wd.next(Clock.time.wd.go(num, wd)) : U32}
+
+def wd_go_next(num, wd):
+  match num:
+    case 0n:
+      {==}
+    case 1n+more:
+      wd_go_next(more, Clock.time.wd.next(wd))
+
+def Laws.weekday_step(num):
+  wd_go_next(num, 4)
+
+def Laws.weekday_next(_wd):
+  {==}
+
+def Laws.weekday_days(_days):
+  {==}
+
+def Laws.fields_weekday(_secs):
+  {==}
+
+def Laws.civil_iso(_secs, _ms):
+  {==}
+
+def Laws.week_rule(_secs):
+  {==}
+
+def Laws.thursday_def(_days):
+  {==}
+
+def Laws.week_of_def(_thu, _year, _month, _day):
+  {==}
+
+def Laws.week_text(_year, _num):
+  {==}
+
+def Laws.week_text_of(_secs):
+  {==}
+
+def Laws.week_text_2009(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 14242, e)
+    : {Clock.time.week.text(Clock.time.week(_)) == "2009-W01" : String}
+  {==}
+
+def Laws.week_dec29_2008(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 14242, e)
+    : {Clock.time.week(_) == (2009, 1) : U32 & U32}
+  {==}
+
+def Laws.week_dec31_2014(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 16435, e)
+    : {Clock.time.week(_) == (2015, 1) : U32 & U32}
+  {==}
+
+def Laws.week_dec30_2019(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 18260, e)
+    : {Clock.time.week(_) == (2020, 1) : U32 & U32}
+  {==}
+
+def Laws.week_dec31_2024(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 20088, e)
+    : {Clock.time.week(_) == (2025, 1) : U32 & U32}
+  {==}
+
+def Laws.week_jan3_2010(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 14612, e)
+    : {Clock.time.week(_) == (2009, 53) : U32 & U32}
+  {==}
+
+def Laws.week_jan1_2016(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 16801, e)
+    : {Clock.time.week(_) == (2015, 53) : U32 & U32}
+  {==}
+
+def Laws.week_jan3_2021(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 18630, e)
+    : {Clock.time.week(_) == (2020, 53) : U32 & U32}
+  {==}
+
+def Laws.week_jan1_2022(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 18993, e)
+    : {Clock.time.week(_) == (2021, 52) : U32 & U32}
+  {==}
+
+def Laws.week_jan1_2023(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 19358, e)
+    : {Clock.time.week(_) == (2022, 52) : U32 & U32}
+  {==}
+
+def Laws.week_jan1_2027(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 20819, e)
+    : {Clock.time.week(_) == (2026, 53) : U32 & U32}
+  {==}
+
+def Laws.week_53_2020(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 18627, e)
+    : {Clock.time.week(_) == (2020, 53) : U32 & U32}
+  {==}
+
+def Laws.week_53_2026(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 20818, e)
+    : {Clock.time.week(_) == (2026, 53) : U32 & U32}
+  {==}
+
+def Laws.week_52_2021(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 18992, e)
+    : {Clock.time.week(_) == (2021, 52) : U32 & U32}
+  {==}
+
+def Laws.week_52_2025(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 20450, e)
+    : {Clock.time.week(_) == (2025, 52) : U32 & U32}
+  {==}
+
+def Laws.week_after_52_2025(secs, e):
+  %Equal.sym(U32, (secs / 86400 : U32), 20451, e)
+    : {Clock.time.week(_) == (2026, 1) : U32 & U32}
+  {==}
+
 # --- text templates ---
 
 def Laws.fill_open_empty(_close, _t, _pairs):

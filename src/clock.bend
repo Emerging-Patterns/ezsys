@@ -123,3 +123,80 @@ def time.iso(+secs: U32, ms: U32) -> String:
 def time.iso.of(now: U32 & U32) -> String:
   (secs, ms) = now
   time.iso(secs, ms)
+
+# --- weekdays and ISO 8601 weeks ---
+
+# the ISO 8601 weekday after `wd`: 1 is Monday and 7 is Sunday, so Sunday
+# is followed by Monday
+def time.wd.next(+wd: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(wd, 7), 1, (wd + 1 : U32))
+
+# the weekday `left` days after a day whose weekday is `wd`
+def time.wd.go(left: Nat, wd: U32) -> U32:
+  match left:
+    case 0n:
+      wd
+    case 1n+more:
+      time.wd.go(more, time.wd.next(wd))
+
+# the ISO weekday of day `num` after 1970-01-01, a Thursday (4)
+def time.weekday.nat(num: Nat) -> U32:
+  time.wd.go(num, 4)
+
+# the ISO weekday of a day number
+def time.weekday(days: U32) -> U32:
+  time.weekday.nat(U32.to_nat(days))
+
+# the day number of 1 January of a year from 1970 on: Howard Hinnant's
+# days_from_civil for month 1, day 1
+def time.jan1(year: U32) -> U32:
+  +yr = (year - 1 : U32)
+  +era = (yr / 400 : U32)
+  +yoe = (yr - era * 400 : U32)
+  (era * 146097 + yoe * 365 + yoe / 4 - yoe / 100 + 306 - 719468 : U32)
+
+# the Thursday of a day's ISO week (Monday to Sunday)
+def time.thursday(+days: U32) -> U32:
+  (days + 4 - time.weekday(days) : U32)
+
+# the ISO year and week of a week's Thursday: the Thursday's calendar year,
+# and how many Thursdays of that year it is
+def time.week.of(+thu: U32, date: Ymd) -> U32 & U32:
+  match date:
+    case Ymd{+year, _month, _day}:
+      (year, ((thu - time.jan1(year)) / 7 + 1 : U32))
+
+# the ISO 8601 week-numbering year and week of a day number
+def time.week(+days: U32) -> U32 & U32:
+  +thu = time.thursday(days)
+  time.week.of(thu, time.civil(thu))
+
+# the ISO 8601 week-numbering year and week of seconds since the epoch
+def time.iso_week(+secs: U32) -> U32 & U32:
+  time.week((secs / 86400 : U32))
+
+# YYYY-Www of an ISO year and week, as `date +%G-W%V` writes it
+def time.week.text(week: U32 & U32) -> String:
+  (year, num) = week
+  time.four(year) ++ SCon{'-', SCon{'W', time.two(num)}}
+
+# YYYY-Www of seconds since the epoch
+def time.iso_week_text(+secs: U32) -> String:
+  time.week.text(time.iso_week(secs))
+
+# a date, a second of the day and a weekday as the civil fields
+def time.fields.of(
+  date: Ymd,
+  +sod: U32,
+  wd: U32
+) -> U32 & U32 & U32 & U32 & U32 & U32 & U32:
+  match date:
+    case Ymd{year, month, day}:
+      (year, month, day, (sod / 3600 : U32), (sod % 3600 / 60 : U32),
+        (sod % 60 : U32), wd)
+
+# year, month, day, hour, minute, second and ISO weekday of seconds since
+# the epoch, in UTC
+def time.fields(+secs: U32) -> U32 & U32 & U32 & U32 & U32 & U32 & U32:
+  time.fields.of(time.civil((secs / 86400 : U32)), (secs % 86400 : U32),
+    time.weekday((secs / 86400 : U32)))

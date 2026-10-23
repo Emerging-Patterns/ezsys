@@ -97,6 +97,22 @@ law digits_cmp_is_str:
   for rhs: String
   {Ez.digits.cmp(lhs, rhs) == Str.text.digits.cmp(lhs, rhs) : Cmp}
 
+# LAW: time.civil is src/clock.bend's fields
+law time_civil_is_clock:
+  for secs: U32
+  {Ez.time.civil(secs) == Clock.time.fields(secs)
+    : U32 & U32 & U32 & U32 & U32 & U32 & U32}
+
+# LAW: time.iso_week is src/clock.bend's
+law time_iso_week_is_clock:
+  for secs: U32
+  {Ez.time.iso_week(secs) == Clock.time.iso_week(secs) : U32 & U32}
+
+# LAW: time.iso_week_text is src/clock.bend's
+law time_iso_week_text_is_clock:
+  for secs: U32
+  {Ez.time.iso_week_text(secs) == Clock.time.iso_week_text(secs) : String}
+
 # --- fills ---
 
 # time_iso_is_clock holds by unfolding the re-export
@@ -166,4 +182,16 @@ def text_truncate_is_str(_txt, _width):
 
 # digits_cmp_is_str holds by unfolding the re-export
 def digits_cmp_is_str(_lhs, _rhs):
+  {==}
+
+# time_civil_is_clock holds by unfolding the re-export
+def time_civil_is_clock(_secs):
+  {==}
+
+# time_iso_week_is_clock holds by unfolding the re-export
+def time_iso_week_is_clock(_secs):
+  {==}
+
+# time_iso_week_text_is_clock holds by unfolding the re-export
+def time_iso_week_text_is_clock(_secs):
   {==}
