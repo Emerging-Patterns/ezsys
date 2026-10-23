@@ -10,7 +10,8 @@
           "path": "flake.nix"
         }
       ],
-      "versioning": "always-bump-minor"
+      "versioning": "always-bump-minor",
+      "initial-version": "0.1.0"
     }
   }
 }
