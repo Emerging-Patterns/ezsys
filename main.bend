@@ -46,6 +46,19 @@ def time.now() -> IO(U32 & U32):
 def time.iso(secs: U32, ms: U32) -> String:
   Clock.time.iso(secs, ms)
 
+# the civil fields of seconds since the epoch, in UTC: year, month, day,
+# hour, minute, second and ISO weekday (1 Monday to 7 Sunday)
+def time.civil(secs: U32) -> U32 & U32 & U32 & U32 & U32 & U32 & U32:
+  Clock.time.fields(secs)
+
+# the ISO 8601 week-numbering year and week of seconds since the epoch
+def time.iso_week(secs: U32) -> U32 & U32:
+  Clock.time.iso_week(secs)
+
+# the ISO 8601 week as `date -u +%G-W%V` writes it, e.g. `2026-W43`
+def time.iso_week_text(secs: U32) -> String:
+  Clock.time.iso_week_text(secs)
+
 # the wall clock as ISO 8601 UTC
 def time.now_iso() -> IO(String):
   Sys.sys.now_iso()

@@ -84,6 +84,7 @@
           echo "$now" | grep -Eqx '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z' || exit 1
           at=$(date -u -d "$(echo "$now" | sed 's/T/ /; s/Z$//')" +%s)
           [ "$at" -ge "$((before - 2))" ] && [ "$at" -le "$((after + 2))" ] || exit 1
+          [ "$(echo "$got" | sed -n 's/^week: //p')" = "$(date -u +%G-W%V)" ] || exit 1
           echo "$got" | grep -qF "Hello Noah, it is $now {{unknown}}" || exit 1
           echo "$got" | grep -qx '  <li>pylon</li>' || exit 1
           echo "$got" | grep -qx 'text: STRASSE|a,b,c|ΑΒ  |' || exit 1

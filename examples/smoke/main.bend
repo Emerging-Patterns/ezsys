@@ -30,6 +30,11 @@ def listed(
     case Done{names}:
       String.join(names, "\n")
 
+# the ISO week of a clock reading
+def weekly(now: U32 & U32) -> String:
+  (secs, _ms) = now
+  Sys.time.iso_week_text(secs)
+
 # save, read back, read a missing file, then the clock, env and templates
 def main() -> IO(Unit):
   do IO<Unit>:
@@ -43,6 +48,8 @@ def main() -> IO(Unit):
     IO.print(shown(m))
     +now : String <- Sys.time.now_iso()
     IO.print("now: " ++ now)
+    clock : U32 & U32 <- Sys.time.now()
+    IO.print("week: " ++ weekly(clock))
     unset : String <- Sys.env.or("EZSYS_UNSET_VAR", "fallback")
     IO.print("env: " ++ unset)
     IO.print(Sys.text.fill("Hello {{name}}, it is {{when}} {{unknown}}", [("name", "Noah"), ("when", now)]))

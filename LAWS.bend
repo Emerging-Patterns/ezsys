@@ -263,6 +263,248 @@ law last_second:
   {Clock.time.iso(4294967295, ms)
     == "2106-02-07T06:28:15." ++ Clock.time.three(ms) ++ "Z" : String}
 
+# --- weekdays and ISO 8601 weeks (SYS-TIME) ---
+
+# the weekday of the civil fields
+def wday(fields: U32 & U32 & U32 & U32 & U32 & U32 & U32) -> U32:
+  (_y, _mo, _d, _h, _mi, _s, wd) = fields
+  wd
+
+# the civil fields written as time.iso writes them, with a millisecond
+def civil_text(
+  fields: U32 & U32 & U32 & U32 & U32 & U32 & U32,
+  ms: U32
+) -> String:
+  (year, month, day, hour, minute, second, _wd) = fields
+  Clock.time.four(year) ++ "-" ++ Clock.time.two(month) ++ "-"
+    ++ Clock.time.two(day) ++ "T" ++ Clock.time.two(hour) ++ ":"
+    ++ Clock.time.two(minute) ++ ":" ++ Clock.time.two(second) ++ "."
+    ++ Clock.time.three(ms) ++ "Z"
+
+# LAW: every second of 1970-01-01 is a Thursday, ISO weekday 4
+# SYS-TIME-6
+law weekday_epoch:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 0 : U32}
+  {Clock.time.weekday((secs / 86400 : U32)) == 4 : U32}
+
+# LAW: each day's day of the week is the one after the day before's
+# SYS-TIME-6
+law weekday_step:
+  for num: Nat
+  {Clock.time.wd.go(1n+num, Clock.Thu{})
+    == Clock.time.wd.next(Clock.time.wd.go(num, Clock.Thu{})) : Clock.Wd}
+
+# LAW: the weekday number after 7 (Sunday) is 1 (Monday); after any other,
+# the next number
+# SYS-TIME-6
+law weekday_next:
+  for day: Clock.Wd
+  {Clock.time.wd.num(Clock.time.wd.next(day))
+    == Bool.pick(U32, U32.is_eq(Clock.time.wd.num(day), 7), 1,
+      (Clock.time.wd.num(day) + 1 : U32)) : U32}
+
+# LAW: the weekday of day n is the number of the day of the week n days
+# after 1970-01-01, a Thursday
+# SYS-TIME-6
+law weekday_nat:
+  for num: Nat
+  {Clock.time.weekday.nat(num)
+    == Clock.time.wd.num(Clock.time.wd.go(num, Clock.Thu{})) : U32}
+
+# LAW: a day number's weekday, computed a bit at a time, is that of the day
+# that many days after 1970-01-01, counted a day at a time
+# SYS-TIME-6
+law weekday_days:
+  for days: U32
+  {Clock.time.weekday(days) == Clock.time.weekday.nat(U32.to_nat(days)) : U32}
+
+# LAW: time.civil's weekday is its day's
+# SYS-TIME-6
+law fields_weekday:
+  for +secs: U32
+  {wday(Clock.time.fields(secs)) == Clock.time.weekday((secs / 86400 : U32))
+    : U32}
+
+# LAW: the civil fields are the ones time.iso writes
+# SYS-TIME-7
+law civil_iso:
+  for +secs: U32
+  for +ms: U32
+  {Clock.time.iso(secs, ms) == civil_text(Clock.time.fields(secs), ms)
+    : String}
+
+# LAW: a day's ISO year and week are its week's Thursday's calendar year and
+# how many Thursdays of that year it is
+# SYS-TIME-8
+law week_rule:
+  for +secs: U32
+  {Clock.time.iso_week(secs)
+    == Clock.time.week.of(Clock.time.thursday((secs / 86400 : U32)),
+      Clock.time.civil(Clock.time.thursday((secs / 86400 : U32))))
+    : U32 & U32}
+
+# LAW: a week's Thursday is 4 less the weekday days on, Monday to Sunday
+# SYS-TIME-8
+law thursday_def:
+  for +days: U32
+  {Clock.time.thursday(days) == (days + 4 - Clock.time.weekday(days) : U32)
+    : U32}
+
+# LAW: the week of a Thursday is one more than the whole weeks since 1
+# January of its year
+# SYS-TIME-8
+law week_of_def:
+  for +thu: U32
+  for +year: U32
+  for month: U32
+  for day: U32
+  {Clock.time.week.of(thu, Clock.Ymd{year, month, day})
+    == (year, ((thu - Clock.time.jan1(year)) / 7 + 1 : U32)) : U32 & U32}
+
+# LAW: the text of a year and week is YYYY-Www, the week in two digits
+# SYS-TIME-8
+law week_text:
+  for year: U32
+  for num: U32
+  {Clock.time.week.text((year, num))
+    == Clock.time.four(year) ++ "-W" ++ Clock.time.two(num) : String}
+
+# LAW: iso_week_text writes iso_week
+# SYS-TIME-8
+law week_text_of:
+  for +secs: U32
+  {Clock.time.iso_week_text(secs)
+    == Clock.time.week.text(Clock.time.iso_week(secs)) : String}
+
+# LAW: every second of 2008-12-29 is written 2009-W01, the week zero-padded
+# SYS-TIME-8
+# SYS-TIME-9
+law week_text_2009:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 14242 : U32}
+  {Clock.time.iso_week_text(secs) == "2009-W01" : String}
+
+# LAW: every second of 2008-12-29 (Monday) is in week 1 of 2009
+# SYS-TIME-9
+# SYS-TIME-11
+law week_dec29_2008:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 14242 : U32}
+  {Clock.time.iso_week(secs) == (2009, 1) : U32 & U32}
+
+# LAW: every second of 2014-12-31 (Wednesday) is in week 1 of 2015
+# SYS-TIME-9
+# SYS-TIME-11
+law week_dec31_2014:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 16435 : U32}
+  {Clock.time.iso_week(secs) == (2015, 1) : U32 & U32}
+
+# LAW: every second of 2019-12-30 (Monday) is in week 1 of 2020
+# SYS-TIME-9
+# SYS-TIME-11
+law week_dec30_2019:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 18260 : U32}
+  {Clock.time.iso_week(secs) == (2020, 1) : U32 & U32}
+
+# LAW: every second of 2024-12-31 (Tuesday) is in week 1 of 2025
+# SYS-TIME-9
+# SYS-TIME-11
+law week_dec31_2024:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 20088 : U32}
+  {Clock.time.iso_week(secs) == (2025, 1) : U32 & U32}
+
+# LAW: every second of 2010-01-03 (Sunday) is in week 53 of 2009
+# SYS-TIME-9
+# SYS-TIME-11
+law week_jan3_2010:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 14612 : U32}
+  {Clock.time.iso_week(secs) == (2009, 53) : U32 & U32}
+
+# LAW: every second of 2016-01-01 (Friday) is in week 53 of 2015
+# SYS-TIME-9
+# SYS-TIME-11
+law week_jan1_2016:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 16801 : U32}
+  {Clock.time.iso_week(secs) == (2015, 53) : U32 & U32}
+
+# LAW: every second of 2021-01-03 (Sunday) is in week 53 of 2020
+# SYS-TIME-9
+# SYS-TIME-11
+law week_jan3_2021:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 18630 : U32}
+  {Clock.time.iso_week(secs) == (2020, 53) : U32 & U32}
+
+# LAW: every second of 2022-01-01 (Saturday) is in week 52 of 2021
+# SYS-TIME-9
+# SYS-TIME-11
+law week_jan1_2022:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 18993 : U32}
+  {Clock.time.iso_week(secs) == (2021, 52) : U32 & U32}
+
+# LAW: every second of 2023-01-01 (Sunday) is in week 52 of 2022
+# SYS-TIME-9
+# SYS-TIME-11
+law week_jan1_2023:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 19358 : U32}
+  {Clock.time.iso_week(secs) == (2022, 52) : U32 & U32}
+
+# LAW: every second of 2027-01-01 (Friday) is in week 53 of 2026
+# SYS-TIME-9
+# SYS-TIME-11
+law week_jan1_2027:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 20819 : U32}
+  {Clock.time.iso_week(secs) == (2026, 53) : U32 & U32}
+
+# LAW: every second of 2020-12-31 (Thursday) is in week 53 of 2020
+# SYS-TIME-10
+# SYS-TIME-11
+law week_53_2020:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 18627 : U32}
+  {Clock.time.iso_week(secs) == (2020, 53) : U32 & U32}
+
+# LAW: every second of 2026-12-31 (Thursday) is in week 53 of 2026
+# SYS-TIME-10
+# SYS-TIME-11
+law week_53_2026:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 20818 : U32}
+  {Clock.time.iso_week(secs) == (2026, 53) : U32 & U32}
+
+# LAW: every second of 2021-12-31 (Friday) is in week 52 of 2021
+# SYS-TIME-10
+# SYS-TIME-11
+law week_52_2021:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 18992 : U32}
+  {Clock.time.iso_week(secs) == (2021, 52) : U32 & U32}
+
+# LAW: every second of 2025-12-28 (Sunday) is in week 52 of 2025
+# SYS-TIME-10
+# SYS-TIME-11
+law week_52_2025:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 20450 : U32}
+  {Clock.time.iso_week(secs) == (2025, 52) : U32 & U32}
+
+# LAW: every second of 2025-12-29 (Monday) is in week 1 of 2026
+# SYS-TIME-10
+# SYS-TIME-11
+law week_after_52_2025:
+  for secs: U32
+  for e: {(secs / 86400 : U32) == 20451 : U32}
+  {Clock.time.iso_week(secs) == (2026, 1) : U32 & U32}
+
 # --- text templates (SYS-TEXT) ---
 
 # LAW: a template with no open delimiter in it is unchanged
