@@ -13,10 +13,10 @@ from [the hub](https://hub.bend-lang.com) into `~/.bend/lib` on the first
 run; no install step. ezsys is built and checked on Bend 2.0.38.
 
 ```
-import emerging-ezsys@0.1.0.0/main.bend as Sys
+import ezsys@0.1.0.0/main.bend as Sys
 ```
 
-`emerging-ezsys@0.1.0.0` is ezsys v0.1.0, once the release is published.
+`ezsys@0.1.0.0` is ezsys v0.1.0, once the release is published.
 
 Or with [ez](https://github.com/Emerging-Patterns/ez), which records the
 package in `ez.toml` (`ez init` makes one):
@@ -60,7 +60,7 @@ filesystem. `time.now()` holds every second up to 2106-02-07T06:28:15Z.
 
 ```
 import Base
-import emerging-ezsys@0.1.0.0/main.bend as Sys
+import ezsys@0.1.0.0/main.bend as Sys
 
 def shown(res: Result<&1, &1, U32 & String, String>) -> String:
   match res:
