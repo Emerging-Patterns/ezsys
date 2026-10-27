@@ -16,7 +16,9 @@ run; no install step. ezsys is built and checked on Bend 2.0.38.
 import ezsys@0.1.0.0/main.bend as Sys
 ```
 
-`ezsys@0.1.0.0` is ezsys v0.1.0, once the release is published.
+`ezsys@0.1.0.0` is ezsys v0.1.0 and resolves to
+`0x8abe7473e8854cc69c687ee77b7d72e3`; to pin by content, import
+`0x8abe7473e8854cc69c687ee77b7d72e3/main.bend` instead.
 
 Or with [ez](https://github.com/Emerging-Patterns/ez), which records the
 package in `ez.toml` (`ez init` makes one):
