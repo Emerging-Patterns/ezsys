@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/Emerging-Patterns/ezsys/compare/v0.1.0...v0.2.0) (2026-10-27)
+
+
+### Features
+
+* **nix:** build and check on x86_64-linux, aarch64-linux and aarch64-darwin ([#14](https://github.com/Emerging-Patterns/ezsys/issues/14)) ([28906b2](https://github.com/Emerging-Patterns/ezsys/commit/28906b272f6091809e2959aeac22b85dbd1c8195))
+
 ## 0.1.0 (2026-10-27)
 
 
