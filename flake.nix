@@ -41,7 +41,7 @@
             # it back, read a missing file, print the wall clock, which must
             # be within a few seconds of `date -u`, list the directory and a
             # missing one. A smoke run, not evidence for
-            # any SPEC.md row.
+            # any guarantee.
             smoke = pkgs.runCommand "ezsys-smoke" {
               nativeBuildInputs = [ bend llvm.clang ];
               BEND_LIB = ez.bendLib ./ez.lock.toml;

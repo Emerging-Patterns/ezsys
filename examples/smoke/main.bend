@@ -4,7 +4,7 @@ import Base
 import ../../main.bend as Sys
 
 # a read's answer, as a line
-def shown(res: Result<&1, &1, U32 & String, String>) -> String:  # noqa: L001 example program, no law's subject
+def shown(res: Result<&1, &1, U32 & String, String>) -> String:
   match res:
     case Fail{(code, why)}:
       "FAIL " ++ U32.show(code) ++ " " ++ why
@@ -12,7 +12,7 @@ def shown(res: Result<&1, &1, U32 & String, String>) -> String:  # noqa: L001 ex
       "read back: " ++ text
 
 # a save's answer, as a line
-def saved(res: Result<&1, &1, U32 & String, Unit>) -> String:  # noqa: L001 example program, no law's subject
+def saved(res: Result<&1, &1, U32 & String, Unit>) -> String:
   match res:
     case Fail{(code, why)}:
       "save FAIL " ++ U32.show(code) ++ " " ++ why
@@ -20,7 +20,7 @@ def saved(res: Result<&1, &1, U32 & String, Unit>) -> String:  # noqa: L001 exam
       "saved"
 
 # a directory's names, one line each, or the failure as Python writes it
-def listed(  # noqa: L001 example program, no law's subject
+def listed(
   +dir: String,
   res: Result<&1, &1, U32 & String, List<&2, String>>
 ) -> String:
@@ -31,12 +31,12 @@ def listed(  # noqa: L001 example program, no law's subject
       String.join(names, "\n")
 
 # the ISO week of a clock reading
-def weekly(now: U32 & U32) -> String:  # noqa: L001 example program, no law's subject
+def weekly(now: U32 & U32) -> String:
   (secs, _ms) = now
   Sys.time.iso_week_text(secs)
 
 # save, read back, read a missing file, then the clock, env and templates
-def main() -> IO(Unit):  # noqa: L001 example program, no law's subject
+def main() -> IO(Unit):
   do IO<Unit>:
     +dir : String <- Sys.env.or("SMOKE_DIR", "/tmp")
     +path : String = dir ++ "/ezsys-smoke.txt"

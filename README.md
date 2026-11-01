@@ -102,7 +102,8 @@ that is not valid UTF-8 is answered with U+FFFD in place of the bad bytes.
 
 `err.os(code, why, path)` writes a `Fail{(code, why)}` from a file operation
 the way Python's `OSError` does: glibc's text for the common Linux codes
-(the table is in SPEC.md), `why` for any other code, and the path as
+(the table is in [laws/StrerrorTableLookup.bend](laws/StrerrorTableLookup.bend)),
+`why` for any other code, and the path as
 Python's `repr` writes it.
 
 `examples/smoke/main.bend` uses every helper:
@@ -116,14 +117,14 @@ SMOKE_DIR=/tmp ./smoke
 
 ## Guarantees
 
-[SPEC.md](SPEC.md) lists every behavior ezsys guarantees, each either proved
-by a quantified law in `LAWS.bend` or named as a trusted assumption. A row
-marked pending is not guaranteed yet. `nix flake check` runs the proof gate
-(`bend PROOF.bend` must print exactly `ALL PROOFS CHECK` first), the smoke
-program above on the C lane, and bolt, whose `trace` rule checks that SPEC.md
-and the laws agree and whose `coverage` rule, an error, checks that a law
-reaches every def; an example's defs are exempt by a `# noqa: L001` naming
-why.
+[LAWS.bend](LAWS.bend) lists every behavior ezsys guarantees, one file under
+[laws/](laws/) each, proved by the file of the same name under
+[proofs/](proofs/). What ezsys trusts rather than proves is said on the code
+that assumes it. A guarantee marked pending is not guaranteed yet.
+`nix flake check` runs the proof gate (`bend PROOF.bend` must print exactly
+`ALL PROOFS CHECK` first), the smoke program above on the C lane, and bolt,
+whose `coverage` rule, an error, checks that a law reaches every def; an
+example's defs are exempt by a `# noqa: L001` naming why.
 
 What is proved: the shape of every `time.iso` (24 characters, digits where
 digits belong) and how it splits into the day's date and the time of day;
@@ -135,7 +136,7 @@ and how `err.os` writes a code and a path. What is trusted: the three
 effects ezsys adds (a flush-and-rename, the wall clock and a directory's
 names, each a C file with a JS twin), Base's file and environment effects,
 and the IO that runs them in order. The calendar for every other day is
-pending (SYS-TIME-5).
+pending ([laws/IsoWritesGregorianDate.bend](laws/IsoWritesGregorianDate.bend)).
 
 ## License
 

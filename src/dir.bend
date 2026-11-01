@@ -1,8 +1,8 @@
 # ezsys/src/dir: every decision dir.list makes. It does no IO; src/sys.bend
-# reads a directory's raw entry names with its own effect (SYS-TRUST-5) and
-# hands them here. The answer drops exactly "." and ".." and sorts the rest
-# ascending by String.order, which compares code points one by one: that is
-# the bytewise order of their UTF-8 encodings.
+# reads a directory's raw entry names with its own effect (trusted in
+# src/sys.bend) and hands them here. The answer drops exactly "." and ".."
+# and sorts the rest ascending by String.order, which compares code points
+# one by one: that is the bytewise order of their UTF-8 encodings.
 import Base
 
 # whether a name is "." or ".."
