@@ -1,6 +1,6 @@
 # ezsys/src/step: every decision the file and environment helpers make. It
 # does no IO; src/sys.bend runs the effects and acts on these answers
-# (SYS-TRUST-4).
+# (trusted in src/sys.bend).
 import Base
 
 # after one read: read again with the text so far, or stop with an answer
