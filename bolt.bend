@@ -28,6 +28,3 @@ def coverage() -> String:
 def closed() -> String:
   "error"
 
-# an @unsafe def a law file reaches
-def unsafe() -> String:
-  "error"
