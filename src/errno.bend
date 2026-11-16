@@ -9,8 +9,8 @@ import Base
 def err.Table() -> Data:
   List<&2, Sigma<&2, &2, U32, _ => String>>
 
-# the common Linux codes and glibc's text for each, as os.strerror gives it
-def err.table() -> err.Table():
+# codes 1 to 25 and their texts
+def err.table.low() -> err.Table():
   [
     (1, "Operation not permitted"),
     (2, "No such file or directory"),
@@ -36,7 +36,12 @@ def err.table() -> err.Table():
     (22, "Invalid argument"),
     (23, "Too many open files in system"),
     (24, "Too many open files"),
-    (25, "Inappropriate ioctl for device"),
+    (25, "Inappropriate ioctl for device")
+  ]
+
+# codes 26 to 125 and their texts
+def err.table.high() -> err.Table():
+  [
     (26, "Text file busy"),
     (27, "File too large"),
     (28, "No space left on device"),
@@ -62,6 +67,11 @@ def err.table() -> err.Table():
     (122, "Disk quota exceeded"),
     (125, "Operation canceled")
   ]
+
+# the common Linux codes and glibc's text for each, as os.strerror gives it:
+# the classic codes 1 to 25, then the rest
+def err.table() -> err.Table():
+  List.append(&2, Sigma<&2, &2, U32, _ => String>, err.table.low(), err.table.high())
 
 # what is written when hit holds, else what the rest writes
 def err.when(hit: Bool, yes: Unit -> String, no: Unit -> String) -> String:

@@ -19,40 +19,24 @@ def digit_at_shape(k):
   match k:
     case 0n:
       {==}
-    case 1n+k1:
-      match k1:
-        case 0n:
-          {==}
-        case 1n+k2:
-          match k2:
-            case 0n:
-              {==}
-            case 1n+k3:
-              match k3:
-                case 0n:
-                  {==}
-                case 1n+k4:
-                  match k4:
-                    case 0n:
-                      {==}
-                    case 1n+k5:
-                      match k5:
-                        case 0n:
-                          {==}
-                        case 1n+k6:
-                          match k6:
-                            case 0n:
-                              {==}
-                            case 1n+k7:
-                              match k7:
-                                case 0n:
-                                  {==}
-                                case 1n+k8:
-                                  match k8:
-                                    case 0n:
-                                      {==}
-                                    case 1n+_k9:
-                                      {==}
+    case 1n:
+      {==}
+    case 2n:
+      {==}
+    case 3n:
+      {==}
+    case 4n:
+      {==}
+    case 5n:
+      {==}
+    case 6n:
+      {==}
+    case 7n:
+      {==}
+    case 8n:
+      {==}
+    case 9n+_k:
+      {==}
 
 # every digit time.iso writes is shaped '#'
 law digit_shape:
