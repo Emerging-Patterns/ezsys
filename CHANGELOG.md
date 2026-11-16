@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/Emerging-Patterns/ezsys/compare/v0.1.0...v0.2.0) (2026-11-16)
+
+
+### Features
+
+* **nix:** build and check on x86_64-linux, aarch64-linux and aarch64-darwin ([#14](https://github.com/Emerging-Patterns/ezsys/issues/14)) ([28906b2](https://github.com/Emerging-Patterns/ezsys/commit/28906b272f6091809e2959aeac22b85dbd1c8195))
+
+
+### Bug Fixes
+
+* **lint:** clear bolt 1.65 findings (ez 1.16.0, bolt 1.65.0) ([485f33a](https://github.com/Emerging-Patterns/ezsys/commit/485f33afdb23d74d1c9834d62c42f0e2140e9950))
+
 ## 0.1.0 (2026-10-27)
 
 
