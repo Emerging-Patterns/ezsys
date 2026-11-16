@@ -19,40 +19,24 @@ def time.digit.at(place: Nat) -> Char:
   match place:
     case 0n:
       '0'
-    case 1n+k1:
-      match k1:
-        case 0n:
-          '1'
-        case 1n+k2:
-          match k2:
-            case 0n:
-              '2'
-            case 1n+k3:
-              match k3:
-                case 0n:
-                  '3'
-                case 1n+k4:
-                  match k4:
-                    case 0n:
-                      '4'
-                    case 1n+k5:
-                      match k5:
-                        case 0n:
-                          '5'
-                        case 1n+k6:
-                          match k6:
-                            case 0n:
-                              '6'
-                            case 1n+k7:
-                              match k7:
-                                case 0n:
-                                  '7'
-                                case 1n+k8:
-                                  match k8:
-                                    case 0n:
-                                      '8'
-                                    case 1n+_k9:
-                                      '9'
+    case 1n:
+      '1'
+    case 2n:
+      '2'
+    case 3n:
+      '3'
+    case 4n:
+      '4'
+    case 5n:
+      '5'
+    case 6n:
+      '6'
+    case 7n:
+      '7'
+    case 8n:
+      '8'
+    case 9n+_k:
+      '9'
 
 # the decimal digit of n's last place
 def time.digit(num: U32) -> Char:

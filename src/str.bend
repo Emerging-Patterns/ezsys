@@ -343,9 +343,8 @@ def text.lower.rules() -> List<&2, Rule>:
 def text.lower.multi() -> List<&2, Multi>:
   [Multi{304, "i\u{307}"}]
 
-# Unicode 13's uppercase mappings (Python's str.upper) of U+0000 to U+017F
-# and U+0370 to U+04FF that are one code point
-def text.upper.rules() -> List<&2, Rule>:
+# the uppercase rules of U+0000 to U+017F
+def text.upper.rules.latin() -> List<&2, Rule>:
   [
     Rule{97, 122, 1, 65},
     Rule{181, 181, 1, 924},
@@ -358,7 +357,12 @@ def text.upper.rules() -> List<&2, Rule>:
     Rule{314, 328, 2, 313},
     Rule{331, 375, 2, 330},
     Rule{378, 382, 2, 377},
-    Rule{383, 383, 1, 83},
+    Rule{383, 383, 1, 83}
+  ]
+
+# the uppercase rules of U+0370 to U+04FF, Greek and Cyrillic
+def text.upper.rules.greek() -> List<&2, Rule>:
+  [
     Rule{881, 883, 2, 880},
     Rule{887, 887, 1, 886},
     Rule{891, 893, 1, 1021},
@@ -390,6 +394,11 @@ def text.upper.rules() -> List<&2, Rule>:
     Rule{1231, 1231, 1, 1216},
     Rule{1233, 1279, 2, 1232}
   ]
+
+# Unicode 13's uppercase mappings (Python's str.upper) of U+0000 to U+017F
+# and U+0370 to U+04FF that are one code point
+def text.upper.rules() -> List<&2, Rule>:
+  List.append(&2, Rule, text.upper.rules.latin(), text.upper.rules.greek())
 
 # the uppercase mappings of U+00DF, U+0149, U+0390 and U+03B0 are more than
 # one code point
